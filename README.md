@@ -1,4 +1,4 @@
-# DevOnboard AI 🚀
+# DevPilot 🚀
 
 **AI-Powered Developer Onboarding Assistant**
 
@@ -12,7 +12,7 @@
 
 ## 🎯 Overview
 
-**DevOnboard AI** streamlines developer onboarding by automatically analyzing GitHub repositories and generating comprehensive onboarding guides using **IBM watsonx.ai Granite models**. Get new developers up to speed in minutes, not days!
+**DevPilot** streamlines developer onboarding by automatically analyzing GitHub repositories and generating comprehensive onboarding guides using **IBM watsonx.ai Granite models**. Get new developers up to speed in minutes, not days!
 
 ### Key Features
 

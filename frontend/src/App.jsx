@@ -143,7 +143,7 @@ const AppContent = () => {
           }}>
             <CodeIcon sx={{ fontSize: 28 }} />
             <Typography variant="h6" component="div" sx={{ fontWeight: 700 }}>
-              DevOnboard AI
+              DevPilot
             </Typography>
           </Box>
           <Box sx={{ flexGrow: 1 }} />
