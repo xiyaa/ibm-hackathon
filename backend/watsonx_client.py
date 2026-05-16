@@ -64,6 +64,7 @@ class WatsonXClient:
     def _clean_mermaid_code(self, text: str) -> str:
         """
         Clean and extract Mermaid code from AI response.
+        Removes problematic characters that cause parsing errors.
         
         Args:
             text: Raw text from AI model
@@ -71,6 +72,8 @@ class WatsonXClient:
         Returns:
             Clean Mermaid diagram code
         """
+        import re
+        
         # Remove markdown code fences
         if '```mermaid' in text:
             start = text.find('```mermaid') + 10
@@ -86,6 +89,30 @@ class WatsonXClient:
         
         # Remove any remaining markdown artifacts
         text = text.replace('```mermaid', '').replace('```', '').strip()
+        
+        # Fix problematic parentheses in labels
+        # Replace (text) with just text inside square brackets
+        # Pattern: [Label (with parens)] -> [Label with parens]
+        text = re.sub(r'\[([^\]]*)\(([^\)]*)\)([^\]]*)\]', r'[\1\2\3]', text)
+        
+        # Remove any standalone parentheses that might cause issues
+        lines = text.split('\n')
+        cleaned_lines = []
+        for line in lines:
+            # If line contains a label in brackets, clean it
+            if '[' in line and ']' in line:
+                # Remove parentheses from within brackets
+                parts = line.split('[')
+                for i in range(1, len(parts)):
+                    if ']' in parts[i]:
+                        label_part, rest = parts[i].split(']', 1)
+                        # Remove parentheses from label
+                        label_part = label_part.replace('(', '').replace(')', '')
+                        parts[i] = label_part + ']' + rest
+                line = '['.join(parts)
+            cleaned_lines.append(line)
+        
+        text = '\n'.join(cleaned_lines)
         
         # Ensure it starts with a valid mermaid diagram type
         if not any(text.startswith(t) for t in ['graph', 'flowchart', 'sequenceDiagram', 'classDiagram']):
@@ -319,22 +346,26 @@ Keep the response concise and actionable."""
 Technology Stack: {', '.join(tech_stack)}
 
 CRITICAL RULES for Mermaid syntax:
-1. Use ONLY simple node IDs (A, B, C, etc.) - NO special characters
-2. Use square brackets [] for node labels - NO parentheses in labels
-3. Keep labels SHORT (max 20 characters)
-4. Use --> for arrows
-5. Maximum 10 nodes to keep it simple
+1. Use ONLY simple node IDs: A, B, C, D, E, F, G, H
+2. Use square brackets [] for labels
+3. NEVER use parentheses () anywhere in the diagram
+4. Keep labels SHORT - maximum 15 characters
+5. Use --> for arrows
+6. Maximum 8 nodes total
+7. NO special characters in labels
 
-Example of CORRECT syntax:
-```mermaid
+CORRECT example:
 graph TD
-    A[Frontend] --> B[API Layer]
+    A[Frontend] --> B[API]
     B --> C[Database]
-    B --> D[External API]
-```
+    B --> D[Cache]
 
-Create a simple diagram with 5-8 main components showing their relationships.
-Return ONLY the mermaid code block, nothing else."""
+WRONG examples (DO NOT DO THIS):
+- E[API (REST)] - NO parentheses!
+- F[DB (SQL)] - NO parentheses!
+
+Create a simple diagram with 5-8 components.
+Return ONLY the graph code starting with "graph TD"."""
 
         try:
             model = self._create_model()
@@ -389,23 +420,29 @@ Technology Stack: {', '.join(tech_stack)}
 
 CRITICAL RULES for Mermaid flowchart syntax:
 1. Start with "flowchart TD"
-2. Use ONLY simple IDs (A, B, C, etc.) - NO special characters
-3. Use square brackets [] for processes - NO parentheses in labels
+2. Use ONLY simple IDs: A, B, C, D, E, F, G, H
+3. Use square brackets [] for processes
 4. Use curly braces {{}} for decisions
-5. Keep labels SHORT (max 15 characters)
-6. Maximum 10 nodes
-7. NO style commands
+5. NEVER use parentheses () anywhere
+6. Keep labels SHORT - maximum 12 characters
+7. Maximum 8 nodes total
+8. NO style commands
 
-Example of CORRECT syntax:
+CORRECT example:
 flowchart TD
-    A[Start] --> B[Process Input]
+    A[Start] --> B[Read Input]
     B --> C{{Valid?}}
-    C -->|Yes| D[Execute]
+    C -->|Yes| D[Process]
     C -->|No| E[Error]
-    D --> F[Return Result]
+    D --> F[Save]
+    F --> G[Done]
 
-Create a simple 6-8 step flow showing the main application logic.
-Return ONLY the flowchart code, nothing else."""
+WRONG examples (DO NOT DO THIS):
+- H[Read File (JSON)] - NO parentheses!
+- I[DB (SQL)] - NO parentheses!
+
+Create a simple 6-8 step flow.
+Return ONLY the flowchart code starting with "flowchart TD"."""
 
         try:
             model = self._create_model()
@@ -458,24 +495,28 @@ File Structure (first 1000 chars):
 
 CRITICAL RULES for Mermaid syntax:
 1. Start with "graph TD"
-2. Use ONLY simple IDs (Root, A, B, C, etc.) - NO special characters
+2. Use ONLY simple IDs: Root, A, B, C, D, E, F, G, H
 3. Use square brackets [] for labels
-4. Keep labels SHORT (max 20 characters)
-5. Maximum 12 nodes total
-6. NO style commands
-7. NO emojis in node IDs, only in labels
+4. NEVER use parentheses () anywhere
+5. Keep labels SHORT - maximum 15 characters
+6. Maximum 10 nodes total
+7. NO style commands
+8. NO emojis or special characters
 
-Example of CORRECT syntax:
+CORRECT example:
 graph TD
-    Root[Project Root] --> A[src folder]
-    Root --> B[tests folder]
-    Root --> C[config folder]
+    Root[Project] --> A[src]
+    Root --> B[tests]
+    Root --> C[docs]
     A --> D[main.py]
     A --> E[utils.py]
-    B --> F[test files]
 
-Create a simple diagram showing only the main folders and 2-3 key files.
-Return ONLY the graph code, nothing else."""
+WRONG examples (DO NOT DO THIS):
+- F[config (yaml)] - NO parentheses!
+- G[tests (unit)] - NO parentheses!
+
+Create a simple diagram with main folders only.
+Return ONLY the graph code starting with "graph TD"."""
 
         try:
             model = self._create_model()
