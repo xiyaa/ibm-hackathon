@@ -1,6 +1,6 @@
 """
 Pydantic models for request/response validation.
-Defines all data structures used in the DevOnboard AI API.
+Defines all data structures used in the DevPilot API.
 """
 
 from typing import List, Optional, Dict, Any

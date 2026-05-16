@@ -1,5 +1,5 @@
 """
-Configuration management for DevOnboard AI backend.
+Configuration management for DevPilot backend.
 Loads environment variables and provides application settings.
 """
 

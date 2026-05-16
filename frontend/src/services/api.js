@@ -1,5 +1,5 @@
 /**
- * API client for DevOnboard AI backend
+ * API client for DevPilot backend
  */
 
 import axios from 'axios';

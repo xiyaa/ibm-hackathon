@@ -1,4 +1,4 @@
-# Render Blueprint for DevOnboard AI
+# Render Blueprint for DevPilot
 # This file configures both backend and frontend deployment on Render
 
 services:
@@ -50,6 +50,6 @@ services:
       - key: VITE_API_URL
         value: https://devonboard-ai-backend.onrender.com
       - key: VITE_APP_NAME
-        value: DevOnboard AI
+        value: DevPilot
 
 # Made with Bob

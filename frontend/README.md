@@ -1,6 +1,6 @@
-# DevOnboard AI - Frontend
+# DevPilot - Frontend
 
-React frontend for the DevOnboard AI developer onboarding assistant.
+React frontend for the DevPilot developer onboarding assistant.
 
 ## 🚀 Quick Start
 
@@ -95,7 +95,7 @@ Create a `.env` file:
 
 ```env
 VITE_API_URL=http://localhost:8000
-VITE_APP_NAME=DevOnboard AI
+VITE_APP_NAME=DevPilot
 ```
 
 ### API Proxy

@@ -1,8 +1,8 @@
-# DevOnboard AI - Architecture & Development Guide
+# DevPilot - Architecture & Development Guide
 
 ## 🎯 Project Overview
 
-**DevOnboard AI** is an intelligent developer onboarding assistant that streamlines the process of understanding new codebases. It clones GitHub repositories, performs deep analysis using IBM watsonx.ai Granite models, and provides an interactive chat interface where developers can explore and learn about the codebase through natural language conversations.
+**DevPilot** is an intelligent developer onboarding assistant that streamlines the process of understanding new codebases. It clones GitHub repositories, performs deep analysis using IBM watsonx.ai Granite models, and provides an interactive chat interface where developers can explore and learn about the codebase through natural language conversations.
 
 ### Key Features
 - 🔄 Automated GitHub repository cloning and analysis
@@ -465,7 +465,7 @@ LOG_LEVEL=INFO
 **Frontend (`.env`):**
 ```bash
 VITE_API_URL=http://localhost:8000
-VITE_APP_NAME=DevOnboard AI
+VITE_APP_NAME=DevPilot
 ```
 
 ---

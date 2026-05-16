@@ -1,5 +1,5 @@
 """
-Utility functions for DevOnboard AI backend.
+Utility functions for DevPilot backend.
 """
 
 import hashlib

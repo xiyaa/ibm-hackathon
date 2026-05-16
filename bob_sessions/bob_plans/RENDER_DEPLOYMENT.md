@@ -1,4 +1,4 @@
-# 🚀 Deploy DevOnboard AI to Render - Step by Step
+# 🚀 Deploy DevPilot to Render - Step by Step
 
 Complete guide to deploy your application to Render and get public URLs.
 
@@ -217,7 +217,7 @@ Add these variables:
 
 ```
 VITE_API_URL = https://devonboard-ai-backend.onrender.com
-VITE_APP_NAME = DevOnboard AI
+VITE_APP_NAME = DevPilot
 ```
 
 **Important**: Use your actual backend URL from Step 1!
@@ -245,7 +245,7 @@ After deployment, you'll have:
 
 ### Test Frontend
 1. Open `https://devonboard-ai-frontend.onrender.com`
-2. You should see the DevOnboard AI interface
+2. You should see the DevPilot interface
 3. Try entering a GitHub URL (e.g., `https://github.com/tiangolo/typer`)
 
 ### Test Backend
@@ -500,6 +500,6 @@ I've included a `render.yaml` file in your project. To use it:
 
 ---
 
-**Congratulations! Your DevOnboard AI is now live! 🎉**
+**Congratulations! Your DevPilot is now live! 🎉**
 
 Share your public URL and showcase your AI-powered developer onboarding assistant!

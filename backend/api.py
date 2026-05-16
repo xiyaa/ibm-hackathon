@@ -1,5 +1,5 @@
 """
-FastAPI application for DevOnboard AI backend.
+FastAPI application for DevPilot backend.
 Provides REST API endpoints for repository analysis and chat functionality.
 """
 

@@ -1,5 +1,5 @@
 """
-DevOnboard AI Backend Package
+DevPilot Backend Package
 """
 
 __version__ = "1.0.0"
