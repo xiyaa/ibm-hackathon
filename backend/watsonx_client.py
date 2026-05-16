@@ -61,6 +61,43 @@ class WatsonXClient:
             logger.error(f"Error creating model: {str(e)}")
             raise RuntimeError(f"Failed to initialize watsonx.ai model: {str(e)}")
     
+    def _clean_mermaid_code(self, text: str) -> str:
+        """
+        Clean and extract Mermaid code from AI response.
+        
+        Args:
+            text: Raw text from AI model
+            
+        Returns:
+            Clean Mermaid diagram code
+        """
+        # Remove markdown code fences
+        if '```mermaid' in text:
+            start = text.find('```mermaid') + 10
+            end = text.find('```', start)
+            if end > start:
+                text = text[start:end].strip()
+        elif '```' in text:
+            # Try to extract from generic code block
+            start = text.find('```') + 3
+            end = text.find('```', start)
+            if end > start:
+                text = text[start:end].strip()
+        
+        # Remove any remaining markdown artifacts
+        text = text.replace('```mermaid', '').replace('```', '').strip()
+        
+        # Ensure it starts with a valid mermaid diagram type
+        if not any(text.startswith(t) for t in ['graph', 'flowchart', 'sequenceDiagram', 'classDiagram']):
+            # If no valid start, try to find it in the text
+            for diagram_type in ['graph TD', 'graph LR', 'flowchart TD', 'flowchart LR']:
+                if diagram_type in text:
+                    idx = text.find(diagram_type)
+                    text = text[idx:]
+                    break
+        
+        return text.strip()
+    
     def generate_repository_analysis(
         self,
         repo_name: str,
@@ -277,32 +314,27 @@ Keep the response concise and actionable."""
         Returns:
             Mermaid diagram code
         """
-        prompt = f"""Generate a Mermaid diagram showing the architecture of this codebase.
+        prompt = f"""Generate a simple Mermaid architecture diagram for this codebase.
 
 Technology Stack: {', '.join(tech_stack)}
 
-File Structure:
-{file_structure}
+CRITICAL RULES for Mermaid syntax:
+1. Use ONLY simple node IDs (A, B, C, etc.) - NO special characters
+2. Use square brackets [] for node labels - NO parentheses in labels
+3. Keep labels SHORT (max 20 characters)
+4. Use --> for arrows
+5. Maximum 10 nodes to keep it simple
 
-Key Files:
-{key_files}
-
-Create a Mermaid graph diagram that shows:
-1. Main components/modules
-2. Their relationships and dependencies
-3. Data flow between components
-4. External services or APIs if any
-
-IMPORTANT: Return ONLY the Mermaid diagram code starting with ```mermaid and ending with ```. 
-Use graph TD or graph LR format. Keep it clear and not too complex.
-
-Example format:
+Example of CORRECT syntax:
 ```mermaid
 graph TD
-    A[Frontend] --> B[API]
+    A[Frontend] --> B[API Layer]
     B --> C[Database]
-    B --> D[External Service]
-```"""
+    B --> D[External API]
+```
+
+Create a simple diagram with 5-8 main components showing their relationships.
+Return ONLY the mermaid code block, nothing else."""
 
         try:
             model = self._create_model()
@@ -320,12 +352,8 @@ graph TD
             else:
                 text = str(response)
             
-            # Extract mermaid code if wrapped in markdown
-            if '```mermaid' in text:
-                start = text.find('```mermaid') + 10
-                end = text.find('```', start)
-                if end > start:
-                    return text[start:end].strip()
+            # Clean the mermaid code
+            text = self._clean_mermaid_code(text)
             
             return text
         except Exception as e:
@@ -355,58 +383,29 @@ graph TD
         Returns:
             Mermaid flowchart code
         """
-        prompt = f"""Generate a detailed Mermaid flowchart showing the request/response flow for {repo_name}.
+        prompt = f"""Generate a simple Mermaid flowchart for {repo_name}.
 
 Technology Stack: {', '.join(tech_stack)}
 
-Key Files:
-{key_files[:1500]}
+CRITICAL RULES for Mermaid flowchart syntax:
+1. Start with "flowchart TD"
+2. Use ONLY simple IDs (A, B, C, etc.) - NO special characters
+3. Use square brackets [] for processes - NO parentheses in labels
+4. Use curly braces {{}} for decisions
+5. Keep labels SHORT (max 15 characters)
+6. Maximum 10 nodes
+7. NO style commands
 
-Entry Points:
-{entry_points}
-
-Create a comprehensive flowchart using flowchart TD format that shows:
-1. User/Client initiating request
-2. Entry point (API endpoint, main function, etc.)
-3. Authentication/validation steps
-4. Main processing logic
-5. Database or external service interactions
-6. Response generation and return
-7. Error handling paths
-
-Use these elements:
-- [Rectangle] for processes
-- {{Diamond}} for decision points
-- [(Cylinder)] for databases
-- ((Circle)) for start/end points
-- Arrows with labels for flow direction
-
-Add colors to different types of operations:
-- Green for successful paths
-- Red for error paths
-- Blue for data operations
-
-IMPORTANT: Return ONLY the Mermaid code without markdown fences. Start directly with "flowchart TD".
-
-Example structure:
+Example of CORRECT syntax:
 flowchart TD
-    Start((User Request)) --> Entry[API Endpoint]
-    Entry --> Validate{{Valid Input?}}
-    Validate -->|No| Error1[Return 400 Error]
-    Validate -->|Yes| Auth{{Authenticated?}}
-    Auth -->|No| Error2[Return 401 Error]
-    Auth -->|Yes| Process[Process Business Logic]
-    Process --> DB[(Query Database)]
-    DB --> Transform[Transform Data]
-    Transform --> Response[Generate Response]
-    Response --> End((Return to User))
-    
-    style Start fill:#4caf50
-    style End fill:#4caf50
-    style Error1 fill:#f44336
-    style Error2 fill:#f44336
-    style DB fill:#2196f3
-    style Process fill:#ff9800"""
+    A[Start] --> B[Process Input]
+    B --> C{{Valid?}}
+    C -->|Yes| D[Execute]
+    C -->|No| E[Error]
+    D --> F[Return Result]
+
+Create a simple 6-8 step flow showing the main application logic.
+Return ONLY the flowchart code, nothing else."""
 
         try:
             model = self._create_model()
@@ -424,12 +423,8 @@ flowchart TD
             else:
                 text = str(response)
             
-            # Extract mermaid code if wrapped in markdown
-            if '```mermaid' in text:
-                start = text.find('```mermaid') + 10
-                end = text.find('```', start)
-                if end > start:
-                    return text[start:end].strip()
+            # Clean the mermaid code
+            text = self._clean_mermaid_code(text)
             
             return text
         except Exception as e:
@@ -454,50 +449,33 @@ flowchart TD
         Returns:
             Mermaid mindmap or graph code
         """
-        prompt = f"""Generate a visual Mermaid diagram showing the file and folder structure of this project.
+        prompt = f"""Generate a simple Mermaid diagram showing the main folder structure.
 
 Technology Stack: {', '.join(tech_stack)}
 
-File Structure:
-{file_structure[:2500]}
+File Structure (first 1000 chars):
+{file_structure[:1000]}
 
-Create a clear Mermaid graph using graph TD format that shows:
-1. Root directory at the top
-2. Main folders as nodes
-3. Important files within folders
-4. Use icons or emojis to distinguish folders 📁 from files 📄
-5. Group related folders together
+CRITICAL RULES for Mermaid syntax:
+1. Start with "graph TD"
+2. Use ONLY simple IDs (Root, A, B, C, etc.) - NO special characters
+3. Use square brackets [] for labels
+4. Keep labels SHORT (max 20 characters)
+5. Maximum 12 nodes total
+6. NO style commands
+7. NO emojis in node IDs, only in labels
 
-Use colors to distinguish:
-- Frontend code (blue)
-- Backend code (orange)
-- Configuration files (gray)
-- Documentation (green)
-
-IMPORTANT: Return ONLY the Mermaid code without markdown fences. Start directly with "graph TD".
-
-Example structure:
+Example of CORRECT syntax:
 graph TD
-    Root[📦 Project Root]
-    Root --> Frontend[📁 frontend/]
-    Root --> Backend[📁 backend/]
-    Root --> Config[📁 config/]
-    
-    Frontend --> FrontSrc[📁 src/]
-    FrontSrc --> Components[📁 components/]
-    FrontSrc --> Services[📁 services/]
-    Components --> App[📄 App.jsx]
-    
-    Backend --> BackSrc[📁 src/]
-    BackSrc --> API[📄 api.py]
-    BackSrc --> Models[📄 models.py]
-    
-    Config --> Package[📄 package.json]
-    Config --> Env[📄 .env]
-    
-    style Frontend fill:#e3f2fd
-    style Backend fill:#fff3e0
-    style Config fill:#f5f5f5"""
+    Root[Project Root] --> A[src folder]
+    Root --> B[tests folder]
+    Root --> C[config folder]
+    A --> D[main.py]
+    A --> E[utils.py]
+    B --> F[test files]
+
+Create a simple diagram showing only the main folders and 2-3 key files.
+Return ONLY the graph code, nothing else."""
 
         try:
             model = self._create_model()
@@ -515,26 +493,17 @@ graph TD
             else:
                 text = str(response)
             
-            # Extract mermaid code if wrapped in markdown
-            if '```mermaid' in text:
-                start = text.find('```mermaid') + 10
-                end = text.find('```', start)
-                if end > start:
-                    return text[start:end].strip()
-            elif '```' in text:
-                start = text.find('```') + 3
-                end = text.find('```', start)
-                if end > start:
-                    return text[start:end].strip()
+            # Clean the mermaid code
+            text = self._clean_mermaid_code(text)
             
             return text
         except Exception as e:
             logger.error(f"Error generating file structure diagram: {str(e)}")
             # Return a default diagram on error
             return """graph TD
-    Root[📦 Project]
-    Root --> Src[📁 src/]
-    Root --> Config[📄 config files]"""
+    Root[Project Root]
+    Root --> Src[src folder]
+    Root --> Config[config files]"""
     
     def generate_setup_instructions(
         self,

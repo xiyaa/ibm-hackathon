@@ -430,55 +430,66 @@ const OnboardingGuide = () => {
         </Accordion>
       )}
 
-      {/* Visual Diagrams Section */}
-      <Box sx={{ mb: 3 }}>
-        <Typography
-          variant="h4"
+      {/* Visual Diagrams Section - ACCORDION */}
+      {(analysis.file_structure_diagram || analysis.architecture_diagram || analysis.flow_diagram) && (
+        <Accordion
+          defaultExpanded
           sx={{
-            mb: 3,
-            fontWeight: 700,
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1,
+            mb: 2,
+            borderRadius: '12px !important',
+            '&:before': { display: 'none' },
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
           }}
         >
-          <DiagramIcon sx={{ fontSize: 40, color: 'primary.main' }} />
-          📊 Visual Architecture
-        </Typography>
+          <AccordionSummary
+            expandIcon={<ExpandMoreIcon />}
+            sx={{
+              bgcolor: 'info.light',
+              color: 'info.dark',
+              borderRadius: '12px 12px 0 0',
+              '&:hover': { bgcolor: 'info.main', color: 'white' },
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <DiagramIcon />
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                📊 Visual Architecture
+              </Typography>
+            </Box>
+          </AccordionSummary>
+          <AccordionDetails sx={{ p: 3 }}>
+            {/* File Structure Diagram */}
+            {analysis.file_structure_diagram && (
+              <Box sx={{ mb: 3 }}>
+                <MermaidDiagram
+                  chart={analysis.file_structure_diagram}
+                  title="📁 Project Structure"
+                />
+              </Box>
+            )}
 
-        {/* File Structure Diagram */}
-        {analysis.file_structure_diagram && (
-          <Box sx={{ mb: 3 }}>
-            <MermaidDiagram
-              chart={analysis.file_structure_diagram}
-              title="📁 Project Structure"
-            />
-          </Box>
-        )}
+            {/* Architecture Diagram */}
+            {analysis.architecture_diagram && (
+              <Box sx={{ mb: 3 }}>
+                <MermaidDiagram
+                  chart={analysis.architecture_diagram}
+                  title="🏗️ System Architecture"
+                />
+              </Box>
+            )}
 
-        {/* Architecture Diagram */}
-        {analysis.architecture_diagram && (
-          <Box sx={{ mb: 3 }}>
-            <MermaidDiagram
-              chart={analysis.architecture_diagram}
-              title="🏗️ System Architecture"
-            />
-          </Box>
-        )}
-
-        {/* Flow Diagram */}
-        {analysis.flow_diagram && (
-          <Box sx={{ mb: 3 }}>
-            <MermaidDiagram
-              chart={analysis.flow_diagram}
-              title="🔄 Application Flow"
-            />
-          </Box>
-        )}
-      </Box>
+            {/* Flow Diagram */}
+            {analysis.flow_diagram && (
+              <Box sx={{ mb: 3 }}>
+                <MermaidDiagram
+                  chart={analysis.flow_diagram}
+                  title="🔄 Application Flow"
+                />
+              </Box>
+            )}
+          </AccordionDetails>
+        </Accordion>
+      )}
 
       {/* Key Files */}
       {analysis.key_files && analysis.key_files.length > 0 && (
