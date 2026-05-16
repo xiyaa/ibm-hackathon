@@ -356,8 +356,9 @@ Stores chat history per session.
 ### watsonx.ai Configuration
 
 **Model Selection:**
-- Primary: `ibm/granite-13b-chat-v2`
-- Fallback: `ibm/granite-20b-multilingual`
+- Primary: `ibm/granite-3-8b-instruct` (general purpose instruction model)
+- Alternative: `ibm/granite-8b-code-instruct` (specialized for code analysis)
+- Alternative: `meta-llama/llama-3-3-70b-instruct` (larger model for complex tasks)
 
 **Prompt Templates:**
 
@@ -411,7 +412,7 @@ Provide a clear, concise answer. If referencing specific code, include file path
 ### Inference Parameters
 ```python
 {
-    "model_id": "ibm/granite-13b-chat-v2",
+    "model_id": "ibm/granite-3-8b-instruct",
     "parameters": {
         "max_new_tokens": 2048,
         "temperature": 0.7,
@@ -421,6 +422,12 @@ Provide a clear, concise answer. If referencing specific code, include file path
     }
 }
 ```
+
+### Available Models in watsonx.ai
+The following models are supported in the current environment:
+- **Granite Models**: `ibm/granite-3-8b-instruct`, `ibm/granite-8b-code-instruct`, `ibm/granite-3-1-8b-base`
+- **Llama Models**: `meta-llama/llama-3-3-70b-instruct`, `meta-llama/llama-3-1-8b`
+- **Mistral Models**: `mistral-large-2512`, `mistralai/mistral-small-3-1-24b-instruct-2503`
 
 ---
 

@@ -6,3 +6,7 @@ node_modules/
 .venv/
 backend/.env.example
 backend/.env
+backend/env.example
+
+temp_repos/
+backend/temp_repos/

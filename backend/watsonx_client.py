@@ -18,6 +18,12 @@ class WatsonXClient:
     
     def __init__(self):
         """Initialize the watsonx.ai client."""
+        # Validate required settings
+        if not settings.watsonx_api_key:
+            raise ValueError("WATSONX_API_KEY is not set in environment variables")
+        if not settings.watsonx_project_id:
+            raise ValueError("WATSONX_PROJECT_ID is not set in environment variables")
+        
         # Initialize credentials dictionary
         self.credentials = {
             "url": settings.watsonx_url,
@@ -37,15 +43,23 @@ class WatsonXClient:
         }
         
         logger.info(f"Initialized WatsonX client with model: {self.model_id}")
+        logger.info(f"Using project ID: {self.project_id}")
+        logger.info(f"API URL: {settings.watsonx_url}")
     
     def _create_model(self) -> Model:
         """Create a model instance for inference."""
-        return Model(
-            model_id=self.model_id,
-            params=self.parameters,
-            credentials=self.credentials,
-            project_id=self.project_id
-        )
+        try:
+            model = Model(
+                model_id=self.model_id,
+                params=self.parameters,
+                credentials=self.credentials,
+                project_id=self.project_id
+            )
+            logger.debug(f"Model created successfully with ID: {self.model_id}")
+            return model
+        except Exception as e:
+            logger.error(f"Error creating model: {str(e)}")
+            raise RuntimeError(f"Failed to initialize watsonx.ai model: {str(e)}")
     
     def generate_repository_analysis(
         self,
@@ -97,18 +111,33 @@ Generate a comprehensive onboarding guide including:
 Format the response in markdown with clear sections and code examples where appropriate."""
 
         try:
+            logger.debug(f"Creating model for repository analysis...")
             model = self._create_model()
+            
+            logger.debug(f"Sending prompt to watsonx.ai (length: {len(prompt)} chars)")
             response = model.generate_text(prompt=prompt)
+            
             logger.info(f"Generated repository analysis for {repo_name}")
-            # Extract text from response
-            if isinstance(response, dict) and 'results' in response:
-                return response['results'][0]['generated_text']
+            logger.debug(f"Response type: {type(response)}")
+            
+            # Handle different response types from watsonx.ai
+            if isinstance(response, dict):
+                logger.debug(f"Response keys: {response.keys()}")
+                # Response is a dictionary with results
+                if 'results' in response and len(response['results']) > 0:
+                    return response['results'][0].get('generated_text', str(response))
+                return str(response)
             elif isinstance(response, str):
                 return response
             else:
+                # Handle list or other types
+                logger.debug(f"Converting response to string: {type(response)}")
                 return str(response)
         except Exception as e:
             logger.error(f"Error generating repository analysis: {str(e)}")
+            logger.error(f"Error type: {type(e).__name__}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
             raise RuntimeError(f"Failed to generate analysis: {str(e)}")
     
     def generate_chat_response(
@@ -159,12 +188,17 @@ Provide a clear, concise answer. If referencing specific code, include file path
             model = self._create_model()
             response = model.generate_text(prompt=prompt)
             logger.info("Generated chat response")
-            # Extract text from response
-            if isinstance(response, dict) and 'results' in response:
-                return response['results'][0]['generated_text']
+            
+            # Handle different response types from watsonx.ai
+            if isinstance(response, dict):
+                # Response is a dictionary with results
+                if 'results' in response and len(response['results']) > 0:
+                    return response['results'][0].get('generated_text', str(response))
+                return str(response)
             elif isinstance(response, str):
                 return response
             else:
+                # Handle list or other types
                 return str(response)
         except Exception as e:
             logger.error(f"Error generating chat response: {str(e)}")
@@ -210,12 +244,17 @@ Keep the response concise and actionable."""
             model = self._create_model()
             response = model.generate_text(prompt=prompt)
             logger.info("Generated architecture insights")
-            # Extract text from response
-            if isinstance(response, dict) and 'results' in response:
-                return response['results'][0]['generated_text']
+            
+            # Handle different response types from watsonx.ai
+            if isinstance(response, dict):
+                # Response is a dictionary with results
+                if 'results' in response and len(response['results']) > 0:
+                    return response['results'][0].get('generated_text', str(response))
+                return str(response)
             elif isinstance(response, str):
                 return response
             else:
+                # Handle list or other types
                 return str(response)
         except Exception as e:
             logger.error(f"Error generating architecture insights: {str(e)}")
@@ -263,12 +302,17 @@ Format as a clear, numbered list."""
             model = self._create_model()
             response = model.generate_text(prompt=prompt)
             logger.info("Generated setup instructions")
-            # Extract text from response
-            if isinstance(response, dict) and 'results' in response:
-                return response['results'][0]['generated_text']
+            
+            # Handle different response types from watsonx.ai
+            if isinstance(response, dict):
+                # Response is a dictionary with results
+                if 'results' in response and len(response['results']) > 0:
+                    return response['results'][0].get('generated_text', str(response))
+                return str(response)
             elif isinstance(response, str):
                 return response
             else:
+                # Handle list or other types
                 return str(response)
         except Exception as e:
             logger.error(f"Error generating setup instructions: {str(e)}")

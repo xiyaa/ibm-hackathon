@@ -50,6 +50,7 @@ watsonx_client = WatsonXClient()
 analysis_cache: Dict[str, CachedAnalysis] = {}
 chat_sessions: Dict[str, ChatSession] = {}
 repo_paths: Dict[str, str] = {}  # session_id -> repo_path mapping
+session_to_cache_key: Dict[str, str] = {}  # session_id -> cache_key mapping for recovery
 
 
 @app.on_event("startup")
@@ -112,8 +113,19 @@ async def analyze_repository(request: AnalyzeRequest):
                 # Create new session for cached result
                 session_id = generate_session_id()
                 
-                # Store repo path for this session
+                # Store repo path and cache key for this session
                 repo_paths[session_id] = settings.get_repo_path(cache_key)
+                session_to_cache_key[session_id] = cache_key
+                
+                # Initialize chat session if not exists
+                if session_id not in chat_sessions:
+                    chat_sessions[session_id] = ChatSession(
+                        session_id=session_id,
+                        repo_url=repo_url,
+                        messages=[],
+                        created_at=datetime.utcnow(),
+                        last_activity=datetime.utcnow()
+                    )
                 
                 return AnalyzeResponse(
                     session_id=session_id,
@@ -136,8 +148,9 @@ async def analyze_repository(request: AnalyzeRequest):
             expires_at=calculate_expiry_time(settings.cache_ttl_days)
         )
         
-        # Store repo path for this session
+        # Store repo path and cache key for this session
         repo_paths[result.session_id] = settings.get_repo_path(cache_key)
+        session_to_cache_key[result.session_id] = cache_key
         
         # Initialize chat session
         chat_sessions[result.session_id] = ChatSession(
@@ -174,18 +187,61 @@ async def chat(request: ChatRequest):
         session_id = request.session_id
         user_message = request.message
         
-        # Validate session
+        # Validate session - try to recover if not found
         if session_id not in chat_sessions:
-            raise HTTPException(status_code=404, detail="Session not found")
+            logger.warning(f"Session not found in chat_sessions: {session_id}")
+            
+            # Try to recover session from cache
+            if session_id in session_to_cache_key:
+                cache_key = session_to_cache_key[session_id]
+                if cache_key in analysis_cache:
+                    cached = analysis_cache[cache_key]
+                    logger.info(f"Recovering session {session_id} from cache")
+                    
+                    # Recreate chat session
+                    chat_sessions[session_id] = ChatSession(
+                        session_id=session_id,
+                        repo_url=cached.repo_url,
+                        messages=[],
+                        created_at=datetime.utcnow(),
+                        last_activity=datetime.utcnow()
+                    )
+                    
+                    # Ensure repo_path is set
+                    if session_id not in repo_paths:
+                        repo_paths[session_id] = settings.get_repo_path(cache_key)
+                else:
+                    logger.error(f"Cache key {cache_key} not found in analysis_cache")
+                    raise HTTPException(
+                        status_code=404,
+                        detail=f"Session expired or not found. Please analyze the repository again. Session ID: {session_id}"
+                    )
+            else:
+                logger.error(f"Session {session_id} not found in session_to_cache_key")
+                logger.debug(f"Available sessions: {list(chat_sessions.keys())}")
+                logger.debug(f"Total sessions in memory: {len(chat_sessions)}")
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Session not found. Please analyze a repository first to create a session. Session ID: {session_id}"
+                )
         
         session = chat_sessions[session_id]
         
-        # Get repository context
-        cache_key = hash_repo_url(session.repo_url, "main")  # Simplified
-        if cache_key not in analysis_cache:
-            raise HTTPException(status_code=404, detail="Repository analysis not found")
+        # Get repository context - try to find the cached analysis
+        # First, try to find the cache key by iterating through cache
+        cached = None
+        cache_key = None
+        for key, value in analysis_cache.items():
+            if value.repo_url == session.repo_url:
+                cached = value
+                cache_key = key
+                break
         
-        cached = analysis_cache[cache_key]
+        if not cached:
+            logger.error(f"Repository analysis not found for session {session_id}")
+            logger.debug(f"Session repo_url: {session.repo_url}")
+            logger.debug(f"Available cache keys: {list(analysis_cache.keys())}")
+            raise HTTPException(status_code=404, detail="Repository analysis not found")
         repository_overview = cached.analysis.overview[:2000]  # Limit context size
         
         # Build file context if provided
@@ -294,16 +350,55 @@ async def get_file_tree(session_id: str):
     Returns:
         Repository file tree
     """
+    # Validate session - try to recover if not found
     if session_id not in chat_sessions:
-        raise HTTPException(status_code=404, detail="Session not found")
+        logger.warning(f"Session not found in chat_sessions: {session_id}")
+        
+        # Try to recover session from cache
+        if session_id in session_to_cache_key:
+            cache_key = session_to_cache_key[session_id]
+            if cache_key in analysis_cache:
+                cached = analysis_cache[cache_key]
+                logger.info(f"Recovering session {session_id} from cache for file tree")
+                
+                # Recreate chat session
+                chat_sessions[session_id] = ChatSession(
+                    session_id=session_id,
+                    repo_url=cached.repo_url,
+                    messages=[],
+                    created_at=datetime.utcnow(),
+                    last_activity=datetime.utcnow()
+                )
+                
+                # Ensure repo_path is set
+                if session_id not in repo_paths:
+                    repo_paths[session_id] = settings.get_repo_path(cache_key)
+            else:
+                logger.error(f"Cache key {cache_key} not found in analysis_cache")
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Session expired or not found. Please analyze the repository again. Session ID: {session_id}"
+                )
+        else:
+            logger.error(f"Session {session_id} not found in session_to_cache_key")
+            logger.debug(f"Available sessions: {list(chat_sessions.keys())}")
+            logger.debug(f"Total sessions in memory: {len(chat_sessions)}")
+            raise HTTPException(
+                status_code=404,
+                detail=f"Session not found. Please analyze a repository first to create a session. Session ID: {session_id}"
+            )
     
     session = chat_sessions[session_id]
-    cache_key = hash_repo_url(session.repo_url, "main")
     
-    if cache_key not in analysis_cache:
+    # Find the cached analysis for this repository
+    cached = None
+    for key, value in analysis_cache.items():
+        if value.repo_url == session.repo_url:
+            cached = value
+            break
+    
+    if not cached:
         raise HTTPException(status_code=404, detail="Repository analysis not found")
-    
-    cached = analysis_cache[cache_key]
     
     return FileTreeResponse(
         session_id=session_id,
@@ -327,7 +422,12 @@ async def get_file_content(
         File content and metadata
     """
     if session_id not in repo_paths:
-        raise HTTPException(status_code=404, detail="Session not found")
+        logger.error(f"Session not found in repo_paths: {session_id}")
+        logger.debug(f"Available repo_paths: {list(repo_paths.keys())}")
+        raise HTTPException(
+            status_code=404,
+            detail=f"Session not found. Please analyze a repository first to create a session. Session ID: {session_id}"
+        )
     
     repo_path = repo_paths[session_id]
     safe_path = sanitize_path(path)
@@ -350,11 +450,16 @@ async def get_file_content(
 
 if __name__ == "__main__":
     import uvicorn
+    import multiprocessing
+    
+    # Fix for Windows multiprocessing issue
+    multiprocessing.freeze_support()
+    
     uvicorn.run(
-        "api:app",
+        app,  # Pass app object directly instead of string to avoid reimport issues
         host=settings.api_host,
         port=settings.api_port,
-        reload=True,
+        reload=False,  # Disable reload on Windows to prevent multiprocessing issues
         log_level=settings.log_level.lower()
     )
 

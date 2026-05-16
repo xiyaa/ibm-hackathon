@@ -7,6 +7,8 @@ import os
 import shutil
 import hashlib
 import json
+import stat
+import time
 from typing import Dict, List, Optional, Tuple
 from pathlib import Path
 import git
@@ -17,6 +19,9 @@ from pygments.util import ClassNotFound as PygmentsClassNotFound
 
 from models import FileNode, KeyFile, DependencyInfo, RepositoryInfo
 from config import settings
+from utils import get_logger
+
+logger = get_logger(__name__)
 
 
 class RepositoryManager:
@@ -61,6 +66,48 @@ class RepositoryManager:
         """Initialize the repository manager."""
         settings.ensure_repo_dir_exists()
     
+    def _remove_readonly(self, func, path, excinfo):
+        """
+        Error handler for Windows readonly file removal.
+        Used with shutil.rmtree to handle Git files on Windows.
+        """
+        try:
+            os.chmod(path, stat.S_IWRITE)
+            func(path)
+        except Exception as e:
+            logger.warning(f"Could not remove {path}: {str(e)}")
+    
+    def _safe_remove_directory(self, path: str, max_retries: int = 3) -> None:
+        """
+        Safely remove a directory, handling Windows file locks.
+        
+        Args:
+            path: Directory path to remove
+            max_retries: Maximum number of retry attempts
+        """
+        if not os.path.exists(path):
+            return
+        
+        for attempt in range(max_retries):
+            try:
+                # On Windows, use onerror callback to handle readonly files
+                if os.name == 'nt':  # Windows
+                    shutil.rmtree(path, onerror=self._remove_readonly)
+                else:
+                    shutil.rmtree(path)
+                logger.debug(f"Successfully removed directory: {path}")
+                return
+            except PermissionError as e:
+                if attempt < max_retries - 1:
+                    logger.warning(f"Attempt {attempt + 1} failed to remove {path}, retrying...")
+                    time.sleep(0.5)  # Wait before retry
+                else:
+                    logger.error(f"Failed to remove directory after {max_retries} attempts: {path}")
+                    raise
+            except Exception as e:
+                logger.error(f"Error removing directory {path}: {str(e)}")
+                raise
+    
     def _generate_repo_id(self, repo_url: str, branch: str) -> str:
         """Generate a unique identifier for a repository and branch."""
         combined = f"{repo_url}:{branch}"
@@ -104,32 +151,51 @@ class RepositoryManager:
         
         # Remove existing directory if it exists
         if os.path.exists(local_path):
-            shutil.rmtree(local_path)
+            logger.info(f"Removing existing directory: {local_path}")
+            self._safe_remove_directory(local_path)
         
-        try:
-            # Clone the repository
-            repo = Repo.clone_from(
-                repo_url,
-                local_path,
-                branch=branch,
-                depth=1  # Shallow clone for faster cloning
-            )
-            
-            # Get last commit info
-            last_commit = repo.head.commit.hexsha[:7]
-            
-            repo_info = RepositoryInfo(
-                name=repo_name,
-                owner=owner,
-                url=repo_url,
-                branch=branch,
-                last_commit=last_commit
-            )
-            
-            return local_path, repo_info
-            
-        except GitCommandError as e:
-            raise ValueError(f"Failed to clone repository: {str(e)}")
+        # Try to clone with specified branch, fallback to alternative branches
+        branches_to_try = [branch]
+        if branch == "main":
+            branches_to_try.append("master")
+        elif branch == "master":
+            branches_to_try.append("main")
+        
+        last_error = None
+        for try_branch in branches_to_try:
+            try:
+                # Clone the repository
+                repo = Repo.clone_from(
+                    repo_url,
+                    local_path,
+                    branch=try_branch,
+                    depth=1  # Shallow clone for faster cloning
+                )
+                
+                # Get last commit info
+                last_commit = repo.head.commit.hexsha[:7]
+                
+                repo_info = RepositoryInfo(
+                    name=repo_name,
+                    owner=owner,
+                    url=repo_url,
+                    branch=try_branch,  # Use the actual branch that worked
+                    last_commit=last_commit
+                )
+                
+                return local_path, repo_info
+                
+            except GitCommandError as e:
+                last_error = e
+                logger.warning(f"Failed to clone with branch '{try_branch}': {str(e)}")
+                # Clean up failed attempt
+                if os.path.exists(local_path):
+                    self._safe_remove_directory(local_path)
+                # Continue to next branch
+                continue
+        
+        # If we get here, all branches failed
+        raise ValueError(f"Failed to clone repository: {str(last_error)}")
     
     def _should_skip_file(self, file_path: Path) -> bool:
         """Check if a file should be skipped during analysis."""
@@ -326,7 +392,8 @@ class RepositoryManager:
             repo_path: Path to the repository to remove
         """
         if os.path.exists(repo_path):
-            shutil.rmtree(repo_path)
+            logger.info(f"Cleaning up repository: {repo_path}")
+            self._safe_remove_directory(repo_path)
     
     def get_file_content(self, repo_path: str, file_path: str) -> Tuple[str, Optional[str], int]:
         """
