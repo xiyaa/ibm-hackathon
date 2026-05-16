@@ -46,7 +46,7 @@ echo.
 echo Press Ctrl+C to stop the demo
 echo.
 
-streamlit run streamlit_app.py
+python -m streamlit run streamlit_app.py
 
 pause
 
