@@ -241,6 +241,29 @@ class CodebaseAnalyzer:
                 tech_stack=tech_stack
             )
             
+            # Generate diagrams
+            logger.info("Generating architecture diagram...")
+            architecture_diagram = self.watsonx_client.generate_architecture_diagram(
+                file_structure=file_tree_str,
+                tech_stack=tech_stack,
+                key_files=key_files_str
+            )
+            
+            logger.info("Generating flow diagram...")
+            entry_points_str = "\n".join([f"- {kf.path}" for kf in key_files if kf.type == "entry_point"])
+            flow_diagram = self.watsonx_client.generate_flow_diagram(
+                repo_name=repo_info.name,
+                tech_stack=tech_stack,
+                key_files=key_files_str,
+                entry_points=entry_points_str or "No specific entry points identified"
+            )
+            
+            logger.info("Generating file structure diagram...")
+            file_structure_diagram = self.watsonx_client.generate_file_structure_diagram(
+                file_structure=file_tree_str,
+                tech_stack=tech_stack
+            )
+            
             # Build analysis result
             analysis = CodeAnalysis(
                 overview=overview,
@@ -249,7 +272,10 @@ class CodebaseAnalyzer:
                 key_files=key_files,
                 dependencies=dependencies,
                 setup_instructions=setup_instructions,
-                architecture_insights=architecture_insights
+                architecture_insights=architecture_insights,
+                architecture_diagram=architecture_diagram,
+                flow_diagram=flow_diagram,
+                file_structure_diagram=file_structure_diagram
             )
             
             # Generate session ID

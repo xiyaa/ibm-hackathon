@@ -28,8 +28,8 @@ logger = get_logger(__name__)
 
 # Initialize FastAPI app
 app = FastAPI(
-    title="DevOnboard AI API",
-    description="AI-powered developer onboarding assistant",
+    title="DevPilot API",
+    description="AI-powered code analysis and developer onboarding",
     version="1.0.0"
 )
 
@@ -56,21 +56,21 @@ session_to_cache_key: Dict[str, str] = {}  # session_id -> cache_key mapping for
 @app.on_event("startup")
 async def startup_event():
     """Initialize application on startup."""
-    logger.info("Starting DevOnboard AI API")
+    logger.info("Starting DevPilot API")
     settings.ensure_repo_dir_exists()
 
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """Cleanup on shutdown."""
-    logger.info("Shutting down DevOnboard AI API")
+    logger.info("Shutting down DevPilot API")
 
 
 @app.get("/")
 async def root():
     """Root endpoint."""
     return {
-        "name": "DevOnboard AI API",
+        "name": "DevPilot API",
         "version": "1.0.0",
         "status": "running"
     }

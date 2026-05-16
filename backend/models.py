@@ -62,6 +62,9 @@ class CodeAnalysis(BaseModel):
     dependencies: List[DependencyInfo] = Field(..., description="Project dependencies")
     setup_instructions: str = Field(..., description="Setup and installation guide")
     architecture_insights: str = Field(..., description="Architecture and design patterns")
+    architecture_diagram: Optional[str] = Field(None, description="Mermaid diagram of architecture")
+    flow_diagram: Optional[str] = Field(None, description="Mermaid diagram of application flow")
+    file_structure_diagram: Optional[str] = Field(None, description="Mermaid diagram of file/folder structure")
 
 
 class AnalyzeResponse(BaseModel):
@@ -175,7 +178,7 @@ class ChatSession(BaseModel):
     last_activity: datetime
 
 
-# Update forward references for recursive models
-FileNode.model_rebuild()
+# Update forward references for recursive models (Pydantic v1)
+FileNode.update_forward_refs()
 
 # Made with Bob

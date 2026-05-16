@@ -1,0 +1,33 @@
+# FastAPI and Web Framework
+fastapi==0.103.0
+uvicorn[standard]==0.23.2
+python-multipart==0.0.6
+
+# IBM watsonx.ai - Let it resolve compatible version
+ibm-watsonx-ai==0.2.6
+# ibm-watson-machine-learning will be installed as dependency of watsonx-ai
+
+# HTTP and API
+httpx==0.24.1
+requests==2.31.0
+
+# Environment and Configuration
+python-dotenv==1.0.0
+# Use Pydantic v1 to completely avoid Rust compilation
+pydantic==1.10.13
+
+# Git Operations
+GitPython==3.1.40
+
+# Code Analysis
+pygments==2.16.1
+radon==6.0.1
+
+# Data Processing
+python-dateutil==2.8.2
+
+# Logging
+loguru==0.7.2
+
+# Type Hints
+typing-extensions==4.8.0
