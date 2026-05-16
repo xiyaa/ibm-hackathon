@@ -3,9 +3,9 @@ fastapi==0.103.0
 uvicorn[standard]==0.23.2
 python-multipart==0.0.6
 
-# IBM watsonx.ai
+# IBM watsonx.ai - Let it resolve compatible version
 ibm-watsonx-ai==0.2.6
-ibm-watson-machine-learning==1.0.335
+# ibm-watson-machine-learning will be installed as dependency of watsonx-ai
 
 # HTTP and API
 httpx==0.24.1
