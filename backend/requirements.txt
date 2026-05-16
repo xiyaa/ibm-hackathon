@@ -34,3 +34,21 @@ python-jose[cryptography]==3.3.0
 
 # Logging
 structlog==23.2.0
+
+
+streamlit>=1.28.0
+
+# HTTP requests
+requests>=2.31.0
+
+# Environment variables
+python-dotenv>=1.0.0
+
+# Markdown rendering (included with streamlit)
+# markdown>=3.5.0
+
+# Code syntax highlighting (included with streamlit)
+# pygments>=2.16.0
+
+# Optional: For better performance
+watchdog>=3.0.0
