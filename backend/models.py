@@ -175,7 +175,7 @@ class ChatSession(BaseModel):
     last_activity: datetime
 
 
-# Update forward references for recursive models
-FileNode.model_rebuild()
+# Update forward references for recursive models (Pydantic v1)
+FileNode.update_forward_refs()
 
 # Made with Bob
