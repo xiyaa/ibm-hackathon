@@ -195,7 +195,10 @@ class RepositoryManager:
                 continue
         
         # If we get here, all branches failed
-        raise ValueError(f"Failed to clone repository: {str(last_error)}")
+        error_msg = f"Branch '{branch}' not found in repository"
+        if branch in ["main", "master"] and len(branches_to_try) > 1:
+            error_msg += f". Tried branches: {', '.join(branches_to_try)}"
+        raise ValueError(error_msg)
     
     def _should_skip_file(self, file_path: Path) -> bool:
         """Check if a file should be skipped during analysis."""

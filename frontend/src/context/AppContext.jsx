@@ -48,6 +48,14 @@ export const AppProvider = ({ children }) => {
   }, []);
 
   /**
+   * Cancel ongoing analysis
+   */
+  const cancelAnalysis = useCallback(() => {
+    setIsAnalyzing(false);
+    setAnalysisError('Analysis cancelled by user');
+  }, []);
+
+  /**
    * Add a chat message
    */
   const addMessage = useCallback((message) => {
@@ -96,6 +104,7 @@ export const AppProvider = ({ children }) => {
     setAnalysisError,
     setAnalysisResults,
     clearAnalysis,
+    cancelAnalysis,
 
     // Chat state
     messages,

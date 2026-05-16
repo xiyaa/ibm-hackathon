@@ -16,12 +16,17 @@ import {
   Paper,
   Chip,
   Stack,
+  Button,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
-import { 
-  Code as CodeIcon, 
+import {
+  Code as CodeIcon,
   AutoAwesome as AIIcon,
   GitHub as GitHubIcon,
   Speed as SpeedIcon,
+  Home as HomeIcon,
+  Refresh as RefreshIcon,
 } from '@mui/icons-material';
 import { AppProvider, useApp } from './context/AppContext';
 import RepositoryInput from './components/RepositoryInput';
@@ -91,7 +96,11 @@ const theme = createTheme({
 });
 
 const AppContent = () => {
-  const { isAnalyzing, analysisError, sessionId } = useApp();
+  const { isAnalyzing, analysisError, sessionId, cancelAnalysis, clearAnalysis } = useApp();
+
+  const handleNewAnalysis = () => {
+    clearAnalysis();
+  };
 
   return (
     <Box sx={{ 
@@ -123,9 +132,9 @@ const AppContent = () => {
         }}
       >
         <Toolbar sx={{ py: 1 }}>
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
+          <Box sx={{
+            display: 'flex',
+            alignItems: 'center',
             gap: 1,
             background: 'rgba(255, 255, 255, 0.2)',
             px: 2,
@@ -138,10 +147,38 @@ const AppContent = () => {
             </Typography>
           </Box>
           <Box sx={{ flexGrow: 1 }} />
-          <Chip 
+          
+          {/* New Analysis Button - only show when there's a session */}
+          {sessionId && !isAnalyzing && (
+            <Tooltip title="Analizar nuevo repositorio">
+              <Button
+                variant="contained"
+                startIcon={<RefreshIcon />}
+                onClick={handleNewAnalysis}
+                sx={{
+                  mr: 2,
+                  background: 'rgba(255, 255, 255, 0.25)',
+                  color: 'white',
+                  fontWeight: 600,
+                  backdropFilter: 'blur(10px)',
+                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                  '&:hover': {
+                    background: 'rgba(255, 255, 255, 0.35)',
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+                  },
+                  transition: 'all 0.3s ease',
+                }}
+              >
+                Nuevo Análisis
+              </Button>
+            </Tooltip>
+          )}
+          
+          <Chip
             icon={<AIIcon />}
             label="Powered by IBM watsonx.ai"
-            sx={{ 
+            sx={{
               background: 'rgba(255, 255, 255, 0.2)',
               color: 'white',
               fontWeight: 600,
@@ -273,6 +310,7 @@ const AppContent = () => {
             <LoadingSpinner
               message="Analyzing repository... This may take 1-2 minutes."
               size={60}
+              onCancel={cancelAnalysis}
             />
           </Paper>
         )}
