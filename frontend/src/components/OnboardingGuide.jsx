@@ -318,11 +318,11 @@ const OnboardingGuide = () => {
         )}
       </Box>
 
-      {/* Overview Section with icon */}
+      {/* Overview Section with icon - ALWAYS VISIBLE */}
       {analysis.overview && (
-        <Card 
+        <Card
           elevation={0}
-          sx={{ 
+          sx={{
             mb: 3,
             border: '2px solid',
             borderColor: 'primary.light',
@@ -330,9 +330,9 @@ const OnboardingGuide = () => {
             overflow: 'hidden',
           }}
         >
-          <Box sx={{ 
-            bgcolor: 'primary.main', 
-            color: 'white', 
+          <Box sx={{
+            bgcolor: 'primary.main',
+            color: 'white',
             p: 2,
             display: 'flex',
             alignItems: 'center',
@@ -354,9 +354,9 @@ const OnboardingGuide = () => {
         </Card>
       )}
 
-      {/* Setup Instructions */}
-      {analysis.setup_instructions && (
-        <Accordion 
+      {/* Architecture Insights - EXPANDED BY DEFAULT */}
+      {analysis.architecture_insights && (
+        <Accordion
           defaultExpanded
           sx={{
             mb: 2,
@@ -365,7 +365,45 @@ const OnboardingGuide = () => {
             boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
           }}
         >
-          <AccordionSummary 
+          <AccordionSummary
+            expandIcon={<ExpandMoreIcon />}
+            sx={{
+              bgcolor: 'secondary.light',
+              color: 'secondary.dark',
+              borderRadius: '12px 12px 0 0',
+              '&:hover': { bgcolor: 'secondary.main', color: 'white' },
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <ArchitectureIcon />
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                🏗️ Architecture Insights
+              </Typography>
+            </Box>
+          </AccordionSummary>
+          <AccordionDetails sx={{ p: 3 }}>
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={MarkdownComponents}
+            >
+              {analysis.architecture_insights}
+            </ReactMarkdown>
+          </AccordionDetails>
+        </Accordion>
+      )}
+
+      {/* Setup Instructions - EXPANDED BY DEFAULT */}
+      {analysis.setup_instructions && (
+        <Accordion
+          defaultExpanded
+          sx={{
+            mb: 2,
+            borderRadius: '12px !important',
+            '&:before': { display: 'none' },
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+          }}
+        >
+          <AccordionSummary
             expandIcon={<ExpandMoreIcon />}
             sx={{
               bgcolor: 'success.light',
@@ -441,43 +479,6 @@ const OnboardingGuide = () => {
           </Box>
         )}
       </Box>
-
-      {/* Architecture Insights */}
-      {analysis.architecture_insights && (
-        <Accordion
-          sx={{
-            mb: 2,
-            borderRadius: '12px !important',
-            '&:before': { display: 'none' },
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-          }}
-        >
-          <AccordionSummary
-            expandIcon={<ExpandMoreIcon />}
-            sx={{
-              bgcolor: 'secondary.light',
-              color: 'secondary.dark',
-              borderRadius: '12px 12px 0 0',
-              '&:hover': { bgcolor: 'secondary.main', color: 'white' },
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <ArchitectureIcon />
-              <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                🏗️ Architecture Insights
-              </Typography>
-            </Box>
-          </AccordionSummary>
-          <AccordionDetails sx={{ p: 3 }}>
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              components={MarkdownComponents}
-            >
-              {analysis.architecture_insights}
-            </ReactMarkdown>
-          </AccordionDetails>
-        </Accordion>
-      )}
 
       {/* Key Files */}
       {analysis.key_files && analysis.key_files.length > 0 && (
