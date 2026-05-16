@@ -150,7 +150,7 @@ Add these variables one by one:
 WATSONX_API_KEY = your_actual_api_key_here
 WATSONX_PROJECT_ID = your_actual_project_id_here
 WATSONX_URL = https://us-south.ml.cloud.ibm.com
-WATSONX_MODEL_ID = ibm/granite-13b-chat-v2
+WATSONX_MODEL_ID = ibm/granite-3-8b-instruct
 REPO_CLONE_DIR = /tmp/repos
 MAX_REPO_SIZE_MB = 500
 CACHE_TTL_DAYS = 7
