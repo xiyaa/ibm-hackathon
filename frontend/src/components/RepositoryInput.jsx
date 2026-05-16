@@ -101,7 +101,7 @@ const RepositoryInput = () => {
           onChange={(e) => setRepoUrl(e.target.value)}
           onKeyPress={handleKeyPress}
           variant="outlined"
-          helperText="Example: https://github.com/fastapi/fastapi"
+          helperText="Example: https://github.com/tiangolo/typer"
         />
 
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>

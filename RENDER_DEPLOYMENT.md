@@ -246,7 +246,7 @@ After deployment, you'll have:
 ### Test Frontend
 1. Open `https://devonboard-ai-frontend.onrender.com`
 2. You should see the DevOnboard AI interface
-3. Try entering a GitHub URL (e.g., `https://github.com/fastapi/fastapi`)
+3. Try entering a GitHub URL (e.g., `https://github.com/tiangolo/typer`)
 
 ### Test Backend
 ```bash
@@ -473,7 +473,7 @@ I've included a `render.yaml` file in your project. To use it:
 
 **Demo Script**:
 1. Open frontend URL
-2. Enter a GitHub repository (e.g., `https://github.com/fastapi/fastapi`)
+2. Enter a GitHub repository (e.g., `https://github.com/tiangolo/typer`)
 3. Wait for analysis (1-2 minutes)
 4. Show AI-generated onboarding guide
 5. Demonstrate chat functionality
