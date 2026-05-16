@@ -170,7 +170,7 @@ const AppContent = () => {
                   transition: 'all 0.3s ease',
                 }}
               >
-                Nuevo Análisis
+                Home
               </Button>
             </Tooltip>
           )}
