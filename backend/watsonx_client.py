@@ -260,6 +260,162 @@ Keep the response concise and actionable."""
             logger.error(f"Error generating architecture insights: {str(e)}")
             return "Unable to generate architecture insights at this time."
     
+    def generate_architecture_diagram(
+        self,
+        file_structure: str,
+        tech_stack: List[str],
+        key_files: str
+    ) -> str:
+        """
+        Generate a Mermaid architecture diagram.
+        
+        Args:
+            file_structure: Repository file structure
+            tech_stack: Technologies used
+            key_files: Information about key files
+            
+        Returns:
+            Mermaid diagram code
+        """
+        prompt = f"""Generate a Mermaid diagram showing the architecture of this codebase.
+
+Technology Stack: {', '.join(tech_stack)}
+
+File Structure:
+{file_structure}
+
+Key Files:
+{key_files}
+
+Create a Mermaid graph diagram that shows:
+1. Main components/modules
+2. Their relationships and dependencies
+3. Data flow between components
+4. External services or APIs if any
+
+IMPORTANT: Return ONLY the Mermaid diagram code starting with ```mermaid and ending with ```. 
+Use graph TD or graph LR format. Keep it clear and not too complex.
+
+Example format:
+```mermaid
+graph TD
+    A[Frontend] --> B[API]
+    B --> C[Database]
+    B --> D[External Service]
+```"""
+
+        try:
+            model = self._create_model()
+            response = model.generate_text(prompt=prompt)
+            logger.info("Generated architecture diagram")
+            
+            # Handle different response types
+            if isinstance(response, dict):
+                if 'results' in response and len(response['results']) > 0:
+                    text = response['results'][0].get('generated_text', str(response))
+                else:
+                    text = str(response)
+            elif isinstance(response, str):
+                text = response
+            else:
+                text = str(response)
+            
+            # Extract mermaid code if wrapped in markdown
+            if '```mermaid' in text:
+                start = text.find('```mermaid') + 10
+                end = text.find('```', start)
+                if end > start:
+                    return text[start:end].strip()
+            
+            return text
+        except Exception as e:
+            logger.error(f"Error generating architecture diagram: {str(e)}")
+            # Return a default diagram on error
+            return """graph TD
+    A[Application] --> B[Components]
+    B --> C[Services]
+    C --> D[Data Layer]"""
+    
+    def generate_flow_diagram(
+        self,
+        repo_name: str,
+        tech_stack: List[str],
+        key_files: str,
+        entry_points: str
+    ) -> str:
+        """
+        Generate a Mermaid flow diagram showing application flow.
+        
+        Args:
+            repo_name: Repository name
+            tech_stack: Technologies used
+            key_files: Information about key files
+            entry_points: Main entry point files
+            
+        Returns:
+            Mermaid flowchart code
+        """
+        prompt = f"""Generate a Mermaid flowchart showing the application flow for {repo_name}.
+
+Technology Stack: {', '.join(tech_stack)}
+
+Key Files:
+{key_files}
+
+Entry Points:
+{entry_points}
+
+Create a Mermaid flowchart that shows:
+1. User/client interaction
+2. Request flow through the application
+3. Main processing steps
+4. Response flow back to user
+5. Key decision points
+
+IMPORTANT: Return ONLY the Mermaid diagram code starting with ```mermaid and ending with ```.
+Use flowchart TD or flowchart LR format. Keep it focused on the main flow.
+
+Example format:
+```mermaid
+flowchart TD
+    Start[User Request] --> Auth{{Authenticated?}}
+    Auth -->|Yes| Process[Process Request]
+    Auth -->|No| Login[Login Page]
+    Process --> DB[(Database)]
+    DB --> Response[Send Response]
+```"""
+
+        try:
+            model = self._create_model()
+            response = model.generate_text(prompt=prompt)
+            logger.info("Generated flow diagram")
+            
+            # Handle different response types
+            if isinstance(response, dict):
+                if 'results' in response and len(response['results']) > 0:
+                    text = response['results'][0].get('generated_text', str(response))
+                else:
+                    text = str(response)
+            elif isinstance(response, str):
+                text = response
+            else:
+                text = str(response)
+            
+            # Extract mermaid code if wrapped in markdown
+            if '```mermaid' in text:
+                start = text.find('```mermaid') + 10
+                end = text.find('```', start)
+                if end > start:
+                    return text[start:end].strip()
+            
+            return text
+        except Exception as e:
+            logger.error(f"Error generating flow diagram: {str(e)}")
+            # Return a default diagram on error
+            return """flowchart TD
+    Start[Start] --> Process[Process]
+    Process --> End[End]"""
+    
     def generate_setup_instructions(
         self,
         dependencies: str,

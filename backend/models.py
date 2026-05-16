@@ -62,6 +62,8 @@ class CodeAnalysis(BaseModel):
     dependencies: List[DependencyInfo] = Field(..., description="Project dependencies")
     setup_instructions: str = Field(..., description="Setup and installation guide")
     architecture_insights: str = Field(..., description="Architecture and design patterns")
+    architecture_diagram: Optional[str] = Field(None, description="Mermaid diagram of architecture")
+    flow_diagram: Optional[str] = Field(None, description="Mermaid diagram of application flow")
 
 
 class AnalyzeResponse(BaseModel):

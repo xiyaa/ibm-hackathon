@@ -30,12 +30,14 @@ import {
   Extension as DependencyIcon,
   PlayArrow as SetupIcon,
   ContentCopy as CopyIcon,
+  AccountTree as DiagramIcon,
 } from '@mui/icons-material';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useApp } from '../context/AppContext';
+import MermaidDiagram from './MermaidDiagram';
 
 // Custom markdown components with beautiful styling
 const MarkdownComponents = {
@@ -390,6 +392,54 @@ const OnboardingGuide = () => {
         </Accordion>
       )}
 
+      {/* Architecture Diagram */}
+      {analysis.architecture_diagram && (
+        <Box sx={{ mb: 3 }}>
+          <Typography
+            variant="h5"
+            sx={{
+              mb: 2,
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              color: 'primary.main',
+            }}
+          >
+            <DiagramIcon sx={{ fontSize: 32 }} />
+            🏗️ Architecture Diagram
+          </Typography>
+          <MermaidDiagram
+            chart={analysis.architecture_diagram}
+            title="System Architecture"
+          />
+        </Box>
+      )}
+
+      {/* Flow Diagram */}
+      {analysis.flow_diagram && (
+        <Box sx={{ mb: 3 }}>
+          <Typography
+            variant="h5"
+            sx={{
+              mb: 2,
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              color: 'secondary.main',
+            }}
+          >
+            <DiagramIcon sx={{ fontSize: 32 }} />
+            🔄 Application Flow
+          </Typography>
+          <MermaidDiagram
+            chart={analysis.flow_diagram}
+            title="Request/Response Flow"
+          />
+        </Box>
+      )}
+
       {/* Architecture Insights */}
       {analysis.architecture_insights && (
         <Accordion
@@ -400,7 +450,7 @@ const OnboardingGuide = () => {
             boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
           }}
         >
-          <AccordionSummary 
+          <AccordionSummary
             expandIcon={<ExpandMoreIcon />}
             sx={{
               bgcolor: 'secondary.light',
