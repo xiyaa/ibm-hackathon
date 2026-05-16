@@ -237,7 +237,7 @@ const AppContent = () => {
               {[
                 { icon: <GitHubIcon />, title: 'GitHub Integration', desc: 'Clone any public repository' },
                 { icon: <AIIcon />, title: 'AI Analysis', desc: 'Powered by Granite models' },
-                { icon: <SpeedIcon />, title: 'Fast Results', desc: 'Get insights in 1-2 minutes' },
+                { icon: <SpeedIcon />, title: 'Fast Results', desc: 'Get insights in 1-5 minutes' },
               ].map((feature, index) => (
                 <Paper
                   key={index}
@@ -308,7 +308,7 @@ const AppContent = () => {
             }}
           >
             <LoadingSpinner
-              message="Analyzing repository... This may take 1-2 minutes."
+              message="Analyzing repository... This may take 1-5 minutes."
               size={60}
               onCancel={cancelAnalysis}
             />

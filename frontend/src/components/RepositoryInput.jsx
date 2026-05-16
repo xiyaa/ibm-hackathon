@@ -140,7 +140,7 @@ const RepositoryInput = () => {
 
       <Box sx={{ mt: 3, p: 2, bgcolor: 'grey.100', borderRadius: 1 }}>
         <Typography variant="caption" color="text.secondary">
-          <strong>Note:</strong> Analysis may take 1-2 minutes depending on repository size.
+          <strong>Note:</strong> Analysis may take 1-5 minutes depending on repository size.
           The AI will analyze the code structure, dependencies, and generate a comprehensive onboarding guide.
         </Typography>
       </Box>
