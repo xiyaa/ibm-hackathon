@@ -1,0 +1,55 @@
+# Render Blueprint for DevOnboard AI
+# This file configures both backend and frontend deployment on Render
+
+services:
+  # Backend API Service
+  - type: web
+    name: devonboard-ai-backend
+    env: python
+    region: oregon
+    plan: free
+    branch: main
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn api:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: WATSONX_API_KEY
+        sync: false
+      - key: WATSONX_PROJECT_ID
+        sync: false
+      - key: WATSONX_URL
+        value: https://us-south.ml.cloud.ibm.com
+      - key: WATSONX_MODEL_ID
+        value: ibm/granite-13b-chat-v2
+      - key: REPO_CLONE_DIR
+        value: /tmp/repos
+      - key: MAX_REPO_SIZE_MB
+        value: 500
+      - key: CACHE_TTL_DAYS
+        value: 7
+      - key: API_HOST
+        value: 0.0.0.0
+      - key: API_PORT
+        value: 10000
+      - key: LOG_LEVEL
+        value: INFO
+      - key: CORS_ORIGINS
+        value: https://devonboard-ai-frontend.onrender.com,http://localhost:5173
+
+  # Frontend Static Site
+  - type: web
+    name: devonboard-ai-frontend
+    env: static
+    region: oregon
+    plan: free
+    branch: main
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://devonboard-ai-backend.onrender.com
+      - key: VITE_APP_NAME
+        value: DevOnboard AI
+
+# Made with Bob

@@ -1,0 +1,15 @@
+---
+applications:
+- name: devonboard-ai-backend
+  memory: 512M
+  instances: 1
+  buildpack: python_buildpack
+  command: uvicorn api:app --host 0.0.0.0 --port $PORT
+  path: ./backend
+  env:
+    PYTHONUNBUFFERED: true
+  services:
+    - devonboard-cloudant
+    - devonboard-watsonx
+
+# Made with Bob
