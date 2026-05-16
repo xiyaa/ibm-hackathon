@@ -258,6 +258,12 @@ class CodebaseAnalyzer:
                 entry_points=entry_points_str or "No specific entry points identified"
             )
             
+            logger.info("Generating file structure diagram...")
+            file_structure_diagram = self.watsonx_client.generate_file_structure_diagram(
+                file_structure=file_tree_str,
+                tech_stack=tech_stack
+            )
+            
             # Build analysis result
             analysis = CodeAnalysis(
                 overview=overview,
@@ -268,7 +274,8 @@ class CodebaseAnalyzer:
                 setup_instructions=setup_instructions,
                 architecture_insights=architecture_insights,
                 architecture_diagram=architecture_diagram,
-                flow_diagram=flow_diagram
+                flow_diagram=flow_diagram,
+                file_structure_diagram=file_structure_diagram
             )
             
             # Generate session ID

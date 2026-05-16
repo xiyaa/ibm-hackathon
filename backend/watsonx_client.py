@@ -355,35 +355,58 @@ graph TD
         Returns:
             Mermaid flowchart code
         """
-        prompt = f"""Generate a Mermaid flowchart showing the application flow for {repo_name}.
+        prompt = f"""Generate a detailed Mermaid flowchart showing the request/response flow for {repo_name}.
 
 Technology Stack: {', '.join(tech_stack)}
 
 Key Files:
-{key_files}
+{key_files[:1500]}
 
 Entry Points:
 {entry_points}
 
-Create a Mermaid flowchart that shows:
-1. User/client interaction
-2. Request flow through the application
-3. Main processing steps
-4. Response flow back to user
-5. Key decision points
+Create a comprehensive flowchart using flowchart TD format that shows:
+1. User/Client initiating request
+2. Entry point (API endpoint, main function, etc.)
+3. Authentication/validation steps
+4. Main processing logic
+5. Database or external service interactions
+6. Response generation and return
+7. Error handling paths
 
-IMPORTANT: Return ONLY the Mermaid diagram code starting with ```mermaid and ending with ```.
-Use flowchart TD or flowchart LR format. Keep it focused on the main flow.
+Use these elements:
+- [Rectangle] for processes
+- {{Diamond}} for decision points
+- [(Cylinder)] for databases
+- ((Circle)) for start/end points
+- Arrows with labels for flow direction
 
-Example format:
-```mermaid
+Add colors to different types of operations:
+- Green for successful paths
+- Red for error paths
+- Blue for data operations
+
+IMPORTANT: Return ONLY the Mermaid code without markdown fences. Start directly with "flowchart TD".
+
+Example structure:
 flowchart TD
-    Start[User Request] --> Auth{{Authenticated?}}
-    Auth -->|Yes| Process[Process Request]
-    Auth -->|No| Login[Login Page]
-    Process --> DB[(Database)]
-    DB --> Response[Send Response]
-```"""
+    Start((User Request)) --> Entry[API Endpoint]
+    Entry --> Validate{{Valid Input?}}
+    Validate -->|No| Error1[Return 400 Error]
+    Validate -->|Yes| Auth{{Authenticated?}}
+    Auth -->|No| Error2[Return 401 Error]
+    Auth -->|Yes| Process[Process Business Logic]
+    Process --> DB[(Query Database)]
+    DB --> Transform[Transform Data]
+    Transform --> Response[Generate Response]
+    Response --> End((Return to User))
+    
+    style Start fill:#4caf50
+    style End fill:#4caf50
+    style Error1 fill:#f44336
+    style Error2 fill:#f44336
+    style DB fill:#2196f3
+    style Process fill:#ff9800"""
 
         try:
             model = self._create_model()
@@ -415,6 +438,103 @@ flowchart TD
             return """flowchart TD
     Start[Start] --> Process[Process]
     Process --> End[End]"""
+    
+    def generate_file_structure_diagram(
+        self,
+        file_structure: str,
+        tech_stack: List[str]
+    ) -> str:
+        """
+        Generate a Mermaid diagram showing the file/folder structure.
+        
+        Args:
+            file_structure: Repository file structure
+            tech_stack: Technologies used
+            
+        Returns:
+            Mermaid mindmap or graph code
+        """
+        prompt = f"""Generate a visual Mermaid diagram showing the file and folder structure of this project.
+
+Technology Stack: {', '.join(tech_stack)}
+
+File Structure:
+{file_structure[:2500]}
+
+Create a clear Mermaid graph using graph TD format that shows:
+1. Root directory at the top
+2. Main folders as nodes
+3. Important files within folders
+4. Use icons or emojis to distinguish folders 📁 from files 📄
+5. Group related folders together
+
+Use colors to distinguish:
+- Frontend code (blue)
+- Backend code (orange)
+- Configuration files (gray)
+- Documentation (green)
+
+IMPORTANT: Return ONLY the Mermaid code without markdown fences. Start directly with "graph TD".
+
+Example structure:
+graph TD
+    Root[📦 Project Root]
+    Root --> Frontend[📁 frontend/]
+    Root --> Backend[📁 backend/]
+    Root --> Config[📁 config/]
+    
+    Frontend --> FrontSrc[📁 src/]
+    FrontSrc --> Components[📁 components/]
+    FrontSrc --> Services[📁 services/]
+    Components --> App[📄 App.jsx]
+    
+    Backend --> BackSrc[📁 src/]
+    BackSrc --> API[📄 api.py]
+    BackSrc --> Models[📄 models.py]
+    
+    Config --> Package[📄 package.json]
+    Config --> Env[📄 .env]
+    
+    style Frontend fill:#e3f2fd
+    style Backend fill:#fff3e0
+    style Config fill:#f5f5f5"""
+
+        try:
+            model = self._create_model()
+            response = model.generate_text(prompt=prompt)
+            logger.info("Generated file structure diagram")
+            
+            # Handle different response types
+            if isinstance(response, dict):
+                if 'results' in response and len(response['results']) > 0:
+                    text = response['results'][0].get('generated_text', str(response))
+                else:
+                    text = str(response)
+            elif isinstance(response, str):
+                text = response
+            else:
+                text = str(response)
+            
+            # Extract mermaid code if wrapped in markdown
+            if '```mermaid' in text:
+                start = text.find('```mermaid') + 10
+                end = text.find('```', start)
+                if end > start:
+                    return text[start:end].strip()
+            elif '```' in text:
+                start = text.find('```') + 3
+                end = text.find('```', start)
+                if end > start:
+                    return text[start:end].strip()
+            
+            return text
+        except Exception as e:
+            logger.error(f"Error generating file structure diagram: {str(e)}")
+            # Return a default diagram on error
+            return """graph TD
+    Root[📦 Project]
+    Root --> Src[📁 src/]
+    Root --> Config[📄 config files]"""
     
     def generate_setup_instructions(
         self,

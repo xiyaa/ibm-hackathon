@@ -64,6 +64,7 @@ class CodeAnalysis(BaseModel):
     architecture_insights: str = Field(..., description="Architecture and design patterns")
     architecture_diagram: Optional[str] = Field(None, description="Mermaid diagram of architecture")
     flow_diagram: Optional[str] = Field(None, description="Mermaid diagram of application flow")
+    file_structure_diagram: Optional[str] = Field(None, description="Mermaid diagram of file/folder structure")
 
 
 class AnalyzeResponse(BaseModel):

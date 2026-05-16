@@ -392,53 +392,55 @@ const OnboardingGuide = () => {
         </Accordion>
       )}
 
-      {/* Architecture Diagram */}
-      {analysis.architecture_diagram && (
-        <Box sx={{ mb: 3 }}>
-          <Typography
-            variant="h5"
-            sx={{
-              mb: 2,
-              fontWeight: 700,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-              color: 'primary.main',
-            }}
-          >
-            <DiagramIcon sx={{ fontSize: 32 }} />
-            🏗️ Architecture Diagram
-          </Typography>
-          <MermaidDiagram
-            chart={analysis.architecture_diagram}
-            title="System Architecture"
-          />
-        </Box>
-      )}
+      {/* Visual Diagrams Section */}
+      <Box sx={{ mb: 3 }}>
+        <Typography
+          variant="h4"
+          sx={{
+            mb: 3,
+            fontWeight: 700,
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+          }}
+        >
+          <DiagramIcon sx={{ fontSize: 40, color: 'primary.main' }} />
+          📊 Visual Architecture
+        </Typography>
 
-      {/* Flow Diagram */}
-      {analysis.flow_diagram && (
-        <Box sx={{ mb: 3 }}>
-          <Typography
-            variant="h5"
-            sx={{
-              mb: 2,
-              fontWeight: 700,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-              color: 'secondary.main',
-            }}
-          >
-            <DiagramIcon sx={{ fontSize: 32 }} />
-            🔄 Application Flow
-          </Typography>
-          <MermaidDiagram
-            chart={analysis.flow_diagram}
-            title="Request/Response Flow"
-          />
-        </Box>
-      )}
+        {/* File Structure Diagram */}
+        {analysis.file_structure_diagram && (
+          <Box sx={{ mb: 3 }}>
+            <MermaidDiagram
+              chart={analysis.file_structure_diagram}
+              title="📁 Project Structure"
+            />
+          </Box>
+        )}
+
+        {/* Architecture Diagram */}
+        {analysis.architecture_diagram && (
+          <Box sx={{ mb: 3 }}>
+            <MermaidDiagram
+              chart={analysis.architecture_diagram}
+              title="🏗️ System Architecture"
+            />
+          </Box>
+        )}
+
+        {/* Flow Diagram */}
+        {analysis.flow_diagram && (
+          <Box sx={{ mb: 3 }}>
+            <MermaidDiagram
+              chart={analysis.flow_diagram}
+              title="🔄 Application Flow"
+            />
+          </Box>
+        )}
+      </Box>
 
       {/* Architecture Insights */}
       {analysis.architecture_insights && (
