@@ -2,13 +2,13 @@
  * Mermaid diagram component for rendering architecture and flow diagrams
  */
 
-import React, { useEffect, useRef } from 'react';
-import { Box, Paper, Typography } from '@mui/material';
+import React, { useEffect, useRef, useState } from 'react';
+import { Box, Paper, Typography, CircularProgress } from '@mui/material';
 import mermaid from 'mermaid';
 
 // Initialize mermaid with configuration
 mermaid.initialize({
-  startOnLoad: true,
+  startOnLoad: false,
   theme: 'default',
   securityLevel: 'loose',
   fontFamily: 'Inter, Roboto, sans-serif',
@@ -24,22 +24,36 @@ mermaid.initialize({
 
 const MermaidDiagram = ({ chart, title }) => {
   const mermaidRef = useRef(null);
-  const [error, setError] = React.useState(null);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [svg, setSvg] = useState('');
 
   useEffect(() => {
-    if (mermaidRef.current && chart) {
+    const renderDiagram = async () => {
+      if (!chart) {
+        setLoading(false);
+        return;
+      }
+
       try {
-        // Clear previous content
-        mermaidRef.current.innerHTML = chart;
+        setLoading(true);
+        setError(null);
+        
+        // Generate unique ID for this diagram
+        const id = `mermaid-${Math.random().toString(36).substr(2, 9)}`;
         
         // Render the diagram
-        mermaid.contentLoaded();
-        setError(null);
+        const { svg: renderedSvg } = await mermaid.render(id, chart);
+        setSvg(renderedSvg);
+        setLoading(false);
       } catch (err) {
         console.error('Mermaid rendering error:', err);
-        setError('Error rendering diagram');
+        setError(`Error rendering diagram: ${err.message}`);
+        setLoading(false);
       }
-    }
+    };
+
+    renderDiagram();
   }, [chart]);
 
   if (!chart) {
@@ -48,10 +62,10 @@ const MermaidDiagram = ({ chart, title }) => {
 
   if (error) {
     return (
-      <Paper 
+      <Paper
         elevation={0}
-        sx={{ 
-          p: 3, 
+        sx={{
+          p: 3,
           mb: 3,
           bgcolor: 'error.light',
           color: 'error.contrastText',
@@ -63,10 +77,10 @@ const MermaidDiagram = ({ chart, title }) => {
   }
 
   return (
-    <Paper 
+    <Paper
       elevation={0}
-      sx={{ 
-        p: 3, 
+      sx={{
+        p: 3,
         mb: 3,
         bgcolor: 'background.paper',
         border: '1px solid',
@@ -75,10 +89,10 @@ const MermaidDiagram = ({ chart, title }) => {
       }}
     >
       {title && (
-        <Typography 
-          variant="h6" 
-          sx={{ 
-            mb: 2, 
+        <Typography
+          variant="h6"
+          sx={{
+            mb: 2,
             fontWeight: 600,
             color: 'primary.main',
           }}
@@ -86,24 +100,28 @@ const MermaidDiagram = ({ chart, title }) => {
           {title}
         </Typography>
       )}
-      <Box
-        ref={mermaidRef}
-        className="mermaid"
-        sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '200px',
-          '& svg': {
-            maxWidth: '100%',
-            height: 'auto',
-          },
-        }}
-      />
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+          <CircularProgress />
+        </Box>
+      ) : (
+        <Box
+          ref={mermaidRef}
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            minHeight: '200px',
+            '& svg': {
+              maxWidth: '100%',
+              height: 'auto',
+            },
+          }}
+          dangerouslySetInnerHTML={{ __html: svg }}
+        />
+      )}
     </Paper>
   );
 };
 
 export default MermaidDiagram;
-
-// Made with Bob
