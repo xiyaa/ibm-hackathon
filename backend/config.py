@@ -5,7 +5,7 @@ Loads environment variables and provides application settings.
 
 import os
 from typing import List
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import BaseSettings
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -47,12 +47,11 @@ class Settings(BaseSettings):
     top_k: int = 50
     repetition_penalty: float = 1.1
     
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        case_sensitive=False,
-        extra="ignore"
-    )
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+        case_sensitive = False
+        extra = "ignore"
     
     def get_repo_path(self, repo_name: str) -> str:
         """Get the full path for a cloned repository."""

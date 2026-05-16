@@ -57,6 +57,54 @@ git push origin main
 3. Sign up with **GitHub** (recommended)
 4. Authorize Render to access your repositories
 
+
+## ⚠️ Important: Python Version & Dependencies
+
+**Before deploying, ensure these files exist in your `backend/` folder:**
+
+### 1. `backend/runtime.txt` (REQUIRED)
+This file forces Render to use Python 3.11 (stable version with pre-built wheels):
+```
+python-3.11.0
+```
+
+**Why this is needed:**
+- Render defaults to Python 3.14 (too new)
+- Python 3.14 doesn't have pre-built wheels for many packages
+- This causes Rust compilation errors with Pydantic
+- Python 3.11 has all necessary pre-built wheels
+
+### 2. `backend/requirements.txt` (UPDATED)
+Uses Pydantic v1 to avoid Rust compilation:
+```python
+fastapi==0.103.0
+uvicorn[standard]==0.23.2
+pydantic==1.10.13  # v1 - pure Python, no Rust needed
+ibm-watsonx-ai==0.2.6
+GitPython==3.1.40
+pygments==2.16.1
+radon==6.0.1
+# ... other dependencies
+```
+
+**Why Pydantic v1:**
+- Pydantic v2 requires Rust compilation
+- Render's free tier has read-only filesystem
+- Can't compile Rust extensions
+- Pydantic v1 is pure Python and works perfectly
+
+### 3. Verify Files Exist
+```bash
+# Check if files exist
+ls backend/runtime.txt
+ls backend/requirements.txt
+
+# If missing, create them:
+echo "python-3.11.0" > backend/runtime.txt
+```
+
+---
+
 ---
 
 ## 🔧 Deploy Backend (5 minutes)
@@ -223,6 +271,51 @@ After frontend is deployed, update backend CORS:
    ```
 4. Click **"Save Changes"**
 5. Service will automatically redeploy
+
+
+### Pydantic Compilation Error (Rust/maturin)
+
+**Issue**: Build fails with error about Rust compilation or `pydantic-core`
+```
+error: failed to create directory `/usr/local/cargo/registry/cache/...`
+Caused by: Read-only file system (os error 30)
+💥 maturin failed
+```
+
+**Solution**:
+1. **Create `backend/runtime.txt`** with content:
+   ```
+   python-3.11.0
+   ```
+2. **Update `backend/requirements.txt`** to use Pydantic v1:
+   ```
+   pydantic==1.10.13
+   ```
+3. **Update `backend/config.py`** to use Pydantic v1 syntax:
+   ```python
+   from pydantic import BaseSettings  # Not from pydantic_settings
+   
+   class Settings(BaseSettings):
+       # ... your settings ...
+       
+       class Config:  # Not model_config
+           env_file = ".env"
+           case_sensitive = False
+   ```
+4. **Commit and push changes**:
+   ```bash
+   git add backend/runtime.txt backend/requirements.txt backend/config.py
+   git commit -m "Fix Render deployment - Python 3.11 + Pydantic v1"
+   git push
+   ```
+5. **Redeploy** - Build should now succeed
+
+**Why this happens:**
+- Render uses Python 3.14 by default (too new)
+- Pydantic v2 requires Rust compilation
+- Render's free tier has read-only filesystem
+- Can't compile Rust extensions
+- Solution: Use Python 3.11 + Pydantic v1 (pure Python)
 
 ---
 
