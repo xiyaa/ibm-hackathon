@@ -123,7 +123,7 @@ const RepositoryInput = () => {
                 onChange={(e) => setForceRefresh(e.target.checked)}
               />
             }
-            label="Ignorar caché (análisis nuevo)"
+            label="Ignore cache (new analysis)"
           />
         </Box>
 
