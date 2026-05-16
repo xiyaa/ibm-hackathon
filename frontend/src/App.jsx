@@ -150,7 +150,7 @@ const AppContent = () => {
           
           {/* New Analysis Button - only show when there's a session */}
           {sessionId && !isAnalyzing && (
-            <Tooltip title="Analizar nuevo repositorio">
+            <Tooltip title="Go to Home">
               <Button
                 variant="contained"
                 startIcon={<RefreshIcon />}
