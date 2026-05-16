@@ -12,6 +12,18 @@ export default defineConfig({
         changeOrigin: true,
       }
     }
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom'],
+          'mui-vendor': ['@mui/material', '@mui/icons-material'],
+          'markdown-vendor': ['react-markdown', 'react-syntax-highlighter'],
+        }
+      }
+    },
+    chunkSizeWarningLimit: 1000,
   }
 })
 
