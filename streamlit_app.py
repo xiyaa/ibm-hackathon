@@ -197,6 +197,8 @@ def initialize_session_state():
         st.session_state.selected_file = None
     if 'analyzing' not in st.session_state:
         st.session_state.analyzing = False
+    if 'uploaded_files' not in st.session_state:
+        st.session_state.uploaded_files = []
 
 
 def validate_github_url(url: str) -> bool:
@@ -235,7 +237,7 @@ def analyze_repository(repo_url: str, branch: str = "main", force_refresh: bool 
         return None
 
 
-def send_chat_message(session_id: str, message: str, context: Optional[Dict] = None) -> Optional[Dict]:
+def send_chat_message(session_id: str, message: str, context: Optional[Dict] = None, include_file_content: bool = True) -> Optional[Dict]:
     """
     Send chat message to backend API.
     
@@ -243,6 +245,7 @@ def send_chat_message(session_id: str, message: str, context: Optional[Dict] = N
         session_id: Session identifier
         message: User message
         context: Optional file context
+        include_file_content: Include actual file content in context
         
     Returns:
         Chat response or None on error
@@ -250,7 +253,8 @@ def send_chat_message(session_id: str, message: str, context: Optional[Dict] = N
     try:
         payload = {
             "session_id": session_id,
-            "message": message
+            "message": message,
+            "include_file_content": include_file_content
         }
         if context:
             payload["context"] = context
@@ -264,6 +268,37 @@ def send_chat_message(session_id: str, message: str, context: Optional[Dict] = N
         return response.json()
     except requests.exceptions.RequestException as e:
         st.error(f"❌ Error sending message: {str(e)}")
+        return None
+
+
+def upload_file(session_id: str, filename: str, content: str, language: Optional[str] = None) -> Optional[Dict]:
+    """
+    Upload a file to the current session.
+    
+    Args:
+        session_id: Session identifier
+        filename: Name of the file
+        content: File content
+        language: Programming language
+        
+    Returns:
+        Upload response or None on error
+    """
+    try:
+        response = requests.post(
+            f"{BACKEND_URL}/api/upload",
+            json={
+                "session_id": session_id,
+                "filename": filename,
+                "content": content,
+                "language": language
+            },
+            timeout=30
+        )
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        st.error(f"❌ Error uploading file: {str(e)}")
         return None
 
 
@@ -340,8 +375,40 @@ def render_sidebar():
         if st.session_state.file_tree:
             st.markdown("---")
             st.markdown("### 📁 Repository Structure")
-            with st.expander("File Tree", expanded=True):
+            with st.expander("File Tree", expanded=False):
                 render_file_tree(st.session_state.file_tree)
+        
+        # File upload section
+        if st.session_state.session_id:
+            st.markdown("---")
+            st.markdown("### 📤 Upload Files")
+            uploaded_file = st.file_uploader(
+                "Upload a file for analysis",
+                type=['py', 'js', 'ts', 'jsx', 'tsx', 'java', 'cpp', 'c', 'h', 'go', 'rs', 'rb', 'php', 'html', 'css', 'json', 'yaml', 'yml', 'md', 'txt'],
+                help="Upload code files to analyze alongside the repository"
+            )
+            
+            if uploaded_file is not None:
+                if st.button("📤 Upload File", use_container_width=True):
+                    try:
+                        content = uploaded_file.read().decode('utf-8')
+                        result = upload_file(
+                            st.session_state.session_id,
+                            uploaded_file.name,
+                            content
+                        )
+                        if result and result.get('success'):
+                            st.success(f"✅ {result.get('message')}")
+                            st.session_state.uploaded_files.append(uploaded_file.name)
+                            st.rerun()
+                    except Exception as e:
+                        st.error(f"❌ Error reading file: {str(e)}")
+            
+            # Show uploaded files
+            if st.session_state.uploaded_files:
+                st.markdown("**Uploaded Files:**")
+                for filename in st.session_state.uploaded_files:
+                    st.markdown(f"- 📄 {filename}")
         
         # Footer
         st.markdown("---")
@@ -450,41 +517,92 @@ def render_onboarding_guide():
 
 
 def render_chat_interface():
-    """Render chat interface for Q&A."""
+    """Render enhanced chat interface for Q&A."""
     if not st.session_state.session_id:
         return
     
     st.markdown("---")
-    st.markdown("## 💬 Ask Questions About the Codebase")
     
-    # Chat history
+    # Chat header with options
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        st.markdown("## 💬 Ask Questions About the Codebase")
+    with col2:
+        if st.button("🗑️ Clear Chat", use_container_width=True):
+            st.session_state.chat_history = []
+            st.rerun()
+    
+    # Chat history with improved styling
     chat_container = st.container()
     with chat_container:
-        for msg in st.session_state.chat_history:
+        if not st.session_state.chat_history:
+            st.info("👋 Start by asking a question about the codebase! Try asking about specific files like 'What does api.py do?' or 'Explain the authentication flow'.")
+        
+        for i, msg in enumerate(st.session_state.chat_history):
             role = msg["role"]
             content = msg["content"]
             
             if role == "user":
                 st.markdown(f"""
                 <div class='chat-message user-message'>
-                <strong>You:</strong><br>{content}
+                <strong>🧑 You:</strong><br>{content}
                 </div>
                 """, unsafe_allow_html=True)
             else:
+                # Format code blocks in AI responses
                 st.markdown(f"""
                 <div class='chat-message'>
-                <strong>AI Assistant:</strong><br>{content}
+                <strong>🤖 AI Assistant:</strong>
                 </div>
                 """, unsafe_allow_html=True)
+                st.markdown(content)
     
-    # Chat input
+    # Suggested questions
+    if not st.session_state.chat_history and st.session_state.analysis_result:
+        st.markdown("### 💡 Suggested Questions:")
+        col1, col2, col3 = st.columns(3)
+        
+        suggestions = [
+            "What is the main purpose of this project?",
+            "How is the project structured?",
+            "What are the key dependencies?",
+            "How do I set up this project?",
+            "What does api.py contain?",
+            "Explain the authentication flow"
+        ]
+        
+        for i, suggestion in enumerate(suggestions[:6]):
+            col = [col1, col2, col3][i % 3]
+            with col:
+                if st.button(f"💭 {suggestion}", key=f"suggest_{i}", use_container_width=True):
+                    st.session_state.chat_history.append({
+                        "role": "user",
+                        "content": suggestion
+                    })
+                    with st.spinner("🤔 AI is thinking..."):
+                        response = send_chat_message(st.session_state.session_id, suggestion, include_file_content=True)
+                    if response:
+                        st.session_state.chat_history.append({
+                            "role": "assistant",
+                            "content": response["response"]
+                        })
+                    st.rerun()
+    
+    # Chat input with enhanced features
+    st.markdown("---")
     with st.form(key="chat_form", clear_on_submit=True):
         user_input = st.text_area(
             "Your question",
-            placeholder="e.g., How does authentication work in this project?",
-            height=100
+            placeholder="Ask anything about the codebase... (e.g., 'What does api.py do?', 'Explain the chat endpoint')",
+            height=100,
+            key="chat_input"
         )
-        submit_button = st.form_submit_button("Send 💬")
+        
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            include_context = st.checkbox("📄 Include file content", value=True, help="Include actual file content in the AI's context for better answers")
+        with col2:
+            submit_button = st.form_submit_button("Send 💬", use_container_width=True)
         
         if submit_button and user_input:
             # Add user message to history
@@ -493,8 +611,14 @@ def render_chat_interface():
                 "content": user_input
             })
             
-            # Get AI response
-            response = send_chat_message(st.session_state.session_id, user_input)
+            # Show thinking indicator
+            with st.spinner("🤔 AI is thinking..."):
+                # Get AI response with file content
+                response = send_chat_message(
+                    st.session_state.session_id,
+                    user_input,
+                    include_file_content=include_context
+                )
             
             if response:
                 st.session_state.chat_history.append({

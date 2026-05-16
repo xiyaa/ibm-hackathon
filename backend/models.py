@@ -88,6 +88,7 @@ class ChatRequest(BaseModel):
     session_id: str = Field(..., description="Session identifier from analysis")
     message: str = Field(..., description="User's question or message")
     context: Optional[FileContext] = Field(None, description="Optional file context")
+    include_file_content: bool = Field(default=True, description="Include actual file content in context")
 
 
 class CodeReference(BaseModel):
@@ -173,6 +174,22 @@ class ChatSession(BaseModel):
     messages: List[ChatMessage]
     created_at: datetime
     last_activity: datetime
+    uploaded_files: Dict[str, str] = {}  # filename -> content mapping
+
+
+class FileUploadRequest(BaseModel):
+    """Request model for file upload."""
+    session_id: str = Field(..., description="Session identifier")
+    filename: str = Field(..., description="Name of the file")
+    content: str = Field(..., description="File content")
+    language: Optional[str] = Field(None, description="Programming language")
+
+
+class FileUploadResponse(BaseModel):
+    """Response model for file upload."""
+    success: bool = Field(..., description="Upload success status")
+    filename: str = Field(..., description="Uploaded filename")
+    message: str = Field(..., description="Status message")
 
 
 # Update forward references for recursive models

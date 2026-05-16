@@ -13,7 +13,8 @@ from models import (
     AnalyzeRequest, AnalyzeResponse, ChatRequest, ChatResponse,
     ChatHistoryResponse, ChatMessage, FileTreeResponse,
     FileContentRequest, FileContentResponse, ErrorResponse,
-    CodeReference, CachedAnalysis, ChatSession
+    CodeReference, CachedAnalysis, ChatSession,
+    FileUploadRequest, FileUploadResponse
 )
 from analyzer import CodebaseAnalyzer
 from watsonx_client import WatsonXClient
@@ -158,7 +159,8 @@ async def analyze_repository(request: AnalyzeRequest):
             repo_url=repo_url,
             messages=[],
             created_at=datetime.utcnow(),
-            last_activity=datetime.utcnow()
+            last_activity=datetime.utcnow(),
+            uploaded_files={}
         )
         
         logger.info(f"Analysis complete for {repo_url}, session: {result.session_id}")
@@ -244,9 +246,20 @@ async def chat(request: ChatRequest):
             raise HTTPException(status_code=404, detail="Repository analysis not found")
         repository_overview = cached.analysis.overview[:2000]  # Limit context size
         
-        # Build file context if provided
-        file_context = None
-        if request.context:
+        # Build comprehensive file context
+        file_context_parts = []
+        
+        # 1. Include uploaded files if any
+        if session.uploaded_files:
+            file_context_parts.append("## Uploaded Files:\n")
+            for filename, content in session.uploaded_files.items():
+                # Limit content to first 100 lines
+                lines = content.split('\n')[:100]
+                limited_content = '\n'.join(lines)
+                file_context_parts.append(f"### {filename}\n```\n{limited_content}\n```\n")
+        
+        # 2. Include specific file context if provided
+        if request.context and request.include_file_content:
             repo_path = repo_paths.get(session_id)
             if repo_path:
                 try:
@@ -257,13 +270,31 @@ async def chat(request: ChatRequest):
                     if request.context.line_range and len(request.context.line_range) == 2:
                         start, end = request.context.line_range
                         snippet = extract_code_snippet(content, start, end)
-                        file_context = f"File: {file_path}\nLines {start}-{end}:\n```{language or ''}\n{snippet}\n```"
+                        file_context_parts.append(f"## Repository File: {file_path}\nLines {start}-{end}:\n```{language or ''}\n{snippet}\n```")
                     else:
-                        # Use first 50 lines as context
-                        snippet = extract_code_snippet(content, 1, 50)
-                        file_context = f"File: {file_path}\n```{language or ''}\n{snippet}\n```"
+                        # Use first 100 lines as context
+                        snippet = extract_code_snippet(content, 1, 100)
+                        file_context_parts.append(f"## Repository File: {file_path}\n```{language or ''}\n{snippet}\n```")
                 except Exception as e:
                     logger.warning(f"Could not load file context: {str(e)}")
+        
+        # 3. Try to detect file references in the user message and include them
+        if request.include_file_content and not request.context:
+            repo_path = repo_paths.get(session_id)
+            if repo_path:
+                # Simple file detection: look for common file patterns in message
+                import re
+                file_patterns = re.findall(r'[\w/\-\.]+\.(py|js|ts|jsx|tsx|java|cpp|c|h|go|rs|rb|php|html|css|json|yaml|yml|md|txt)', user_message.lower())
+                
+                for file_pattern in file_patterns[:3]:  # Limit to 3 files
+                    try:
+                        content, language, lines = analyzer.get_file_content(repo_path, file_pattern)
+                        snippet = extract_code_snippet(content, 1, 100)
+                        file_context_parts.append(f"## Referenced File: {file_pattern}\n```{language or ''}\n{snippet}\n```")
+                    except:
+                        pass  # File not found, skip
+        
+        file_context = "\n\n".join(file_context_parts) if file_context_parts else None
         
         # Prepare chat history
         chat_history = [
@@ -315,6 +346,44 @@ async def chat(request: ChatRequest):
     except Exception as e:
         logger.error(f"Error generating chat response: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Chat failed: {str(e)}")
+
+
+@app.post("/api/upload", response_model=FileUploadResponse)
+async def upload_file(request: FileUploadRequest):
+    """
+    Upload a file for analysis in the current session.
+    
+    Args:
+        request: File upload request with content
+        
+    Returns:
+        Upload confirmation
+    """
+    try:
+        session_id = request.session_id
+        
+        # Validate session
+        if session_id not in chat_sessions:
+            raise HTTPException(status_code=404, detail="Session not found")
+        
+        session = chat_sessions[session_id]
+        
+        # Store uploaded file content
+        session.uploaded_files[request.filename] = request.content
+        
+        logger.info(f"File uploaded: {request.filename} for session {session_id}")
+        
+        return FileUploadResponse(
+            success=True,
+            filename=request.filename,
+            message=f"File '{request.filename}' uploaded successfully"
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error uploading file: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
 
 
 @app.get("/api/chat/history/{session_id}", response_model=ChatHistoryResponse)
